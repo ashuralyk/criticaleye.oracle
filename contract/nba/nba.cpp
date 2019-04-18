@@ -27,16 +27,15 @@ void NBA::transfer( name from, name to, asset quantity, string memo )
     });
 }
 
-void NBA::period( name payer, nba::period::input command )
+void NBA::require( name payer, string input_json )
 {
     require_auth( payer );
     push_requirement( payer, command );
 }
 
-void NBA::specified( name payer, nba::specified::input command )
+void NBA::response( name payer, checksum256 receipt, string output_json )
 {
     require_auth( payer );
-    push_requirement( payer, command );
 }
 
 void NBA::timeout( name payer, checksum256 receipt )

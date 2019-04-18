@@ -41,8 +41,9 @@ namespace tables
 
 struct [[eosio::table("config"), eosio::contract("oracleos.nba")]] config
 {
-    uint32_t abandoned_timeout;
-    uint8_t  max_oracle_per_payer;
+    uint32_t     abandoned_timeout;
+    uint8_t      max_oracle_per_payer;
+    vector<name> allowed_responsers;
 };
 
 struct [[eosio::table("require"), eosio::contract("oracleos.nba")]] require
@@ -90,13 +91,10 @@ public:
     void transfer( name from, name to, asset quantity, string memo );
 
     [[eosio::action]]
-    void period( name payer, nba::period::input command );
+    void require( name payer, string input_json );
 
     [[eosio::action]]
-    void specified( name payer, nba::specified::input command );
-
-    [[eosio::action]]
-    void response( string  );
+    void response( name payer, checksum256 receipt, string output_json );
 
     [[eosio::action]]
     void timeout( name payer, checksum256 receipt );
