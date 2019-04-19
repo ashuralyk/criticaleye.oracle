@@ -27,11 +27,11 @@ void NBA::transfer( name from, name to, asset quantity, string memo )
     });
 }
 
-void NBA::require( name payer, nba::specified::input command )
+void NBA::require( name payer, nba::period::output command )
 {
     require_auth( payer );
 
-    string input_json = json::parser<nba::specified::input>::to_json( command );
+    string input_json = json::parser<nba::period::output>::to_json( command );
 
     checksum256 receipt;
     asset bill;

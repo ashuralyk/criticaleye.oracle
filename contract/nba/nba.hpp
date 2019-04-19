@@ -46,7 +46,7 @@ struct [[eosio::table("config"), eosio::contract("oracleos.nba")]] config
     vector<name> allowed_responsers;
 };
 
-struct [[eosio::table("require"), eosio::contract("oracleos.nba")]] require
+struct [[eosio::table("oracle"), eosio::contract("oracleos.nba")]] oracle
 {
     struct requirement
     {
@@ -70,16 +70,16 @@ struct [[eosio::table("require"), eosio::contract("oracleos.nba")]] require
 namespace indices
 {
 
-typedef multi_index<"require"_n, tables::require> require;
-typedef singleton<"config"_n, tables::config>     config;
+typedef multi_index<"oracle"_n, tables::oracle> oracle;
+typedef singleton<"config"_n, tables::config>   config;
 
 }
 
 class [[eosio::contract("oracleos.nba")]] NBA
     : public contract
 {
-    indices::config  _config;
-    indices::require _require_list;
+    indices::config _config;
+    indices::oracle _require_list;
 
 public:
     NBA( name self, name first_receiver, datastream<const char *> ds )
@@ -94,7 +94,7 @@ public:
     // void require( name payer, string input_json );
     
     [[eosio::action]]
-    void require( name payer, nba::specified::input command );
+    void require( name payer, nba::period::output command );
 
     [[eosio::action]]
     void response( name payer, checksum256 receipt, string output_json );
