@@ -15,7 +15,7 @@
             "label": "copy",
             "type": "shell",
             "command": [
-                "scp -r D:/git/criticaleye/contract vimchain@192.168.100.169:/home/vimchain/Starteos/CONTRACTS_DIR"
+                "scp -r D:/git/criticaleye.oracle/contract vimchain@192.168.100.169:/home/vimchain/Starteos/CONTRACTS_DIR/"
             ],
             "problemMatcher": []
         },

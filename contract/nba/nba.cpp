@@ -27,10 +27,59 @@ void NBA::transfer( name from, name to, asset quantity, string memo )
     });
 }
 
-void NBA::require( name payer, string input_json )
+void NBA::require( name payer, nba::specified::input command )
 {
     require_auth( payer );
-    push_requirement( payer, command );
+
+    string input_json = json::parser<nba::specified::input>::to_json( command );
+
+    checksum256 receipt;
+    asset bill;
+    tie(receipt, bill) = make_receipt( payer, input_json );
+    if ( auto i = _require_list.find(payer.value); i == _require_list.end() )
+    {
+        _require_list.emplace( get_self(), [&](auto &v) {
+            v.payer = payer;
+            v.requirements.push_back({
+                .require_json = input_json,
+                .require_time = current_time_point().time_since_epoch().count(),
+                .receipt      = receipt,
+                .bill         = bill,
+                .payed        = false
+            });
+        });
+    }
+    else
+    {
+        _require_list.modify( i, get_self(), [&](auto &v) {
+            // clear all payed requirements
+            auto removed = remove_if( v.requirements.begin(), v.requirements.end(), [&](auto &r){return r.payed;} );
+            v.requirements.erase( removed, v.requirements.end() );
+            // check validation
+            if ( v.requirements.size() > get_config<"max_oracle_per_payer"_m>() ) {
+                ROLLBACK( "创建的请求数已超过上限值" );
+            }
+            if ( any_of(v.requirements.begin(), v.requirements.end(), [&](auto &r){return r.receipt == receipt;}) ) {
+                ROLLBACK( "已经发起过同样的请求" );
+            }
+            // push requirement
+            v.requirements.push_back({
+                .require_json = input_json,
+                .require_time = current_time_point().time_since_epoch().count(),
+                .receipt      = receipt,
+                .bill         = bill,
+                .payed        = false
+            });
+        });
+    }
+
+    // send defered transaction to ensure the payer if payed this require
+    send_timeout_tx( payer, receipt );
+
+    // send inline action to tell payer the receipt of this requirement
+    send_receipt( payer, receipt, bill );
+
+    print( "string(receipt) = ", util::checksum_to_string(receipt) );
 }
 
 void NBA::response( name payer, checksum256 receipt, string output_json )
@@ -72,7 +121,7 @@ void apply( uint64_t receiver, uint64_t code, uint64_t action )
     {
         switch( action ) 
         {
-           EOSIO_DISPATCH_HELPER( NBA, (period)(specified)(timeout)(config) )
+           EOSIO_DISPATCH_HELPER( NBA, (require)(response)(timeout)(config) )
         }
     }
     else

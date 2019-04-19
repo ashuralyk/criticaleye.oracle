@@ -90,8 +90,11 @@ public:
 
     void transfer( name from, name to, asset quantity, string memo );
 
+    // [[eosio::action]]
+    // void require( name payer, string input_json );
+    
     [[eosio::action]]
-    void require( name payer, string input_json );
+    void require( name payer, nba::specified::input command );
 
     [[eosio::action]]
     void response( name payer, checksum256 receipt, string output_json );
@@ -104,19 +107,9 @@ public:
 
 private:
     template <int _Opt>
-    inline auto get_config() {
-        if constexpr ( _Opt == "abandoned_timeout"_m )    return _config.get_or_default({60, 5}).abandoned_timeout;
-        if constexpr ( _Opt == "max_oracle_per_payer"_m ) return _config.get_or_default({60, 5}).max_oracle_per_payer;
-    }
+    auto get_config();
 
-    template <typename _Cmd>
-    tuple<checksum256, asset> make_receipt( name payer, _Cmd &cmd ) {
-        string source = payer.to_string() + cmd.to_json() + to_string(current_time_point().time_since_epoch().count());
-        return { sha256(source.c_str(), source.size()), asset(1, symbol("EOS", 4)) };
-    }
-
-    template <typename _Cmd>
-    void push_requirement( name payer, _Cmd command );
+    tuple<checksum256, asset> make_receipt( name payer, string &cmd );
 
     void send_timeout_tx( name payer, checksum256 receipt, bool send = true );
 
@@ -127,56 +120,17 @@ private:
 // PRIVATE MEMBERS
 /////////////////////////////////////////////////////////////
 
-template <typename _Cmd>
-inline void NBA::push_requirement( name payer, _Cmd command )
+template <int _Opt>
+inline auto NBA::get_config()
 {
-    checksum256 receipt;
-    asset bill;
-    tie(receipt, bill) = make_receipt( payer, command );
-    if ( auto i = _require_list.find(payer.value); i == _require_list.end() )
-    {
-        _require_list.emplace( get_self(), [&](auto &v) {
-            v.payer = payer;
-            v.requirements.push_back({
-                .require_json = command.to_json(),
-                .require_time = current_time_point().time_since_epoch().count(),
-                .receipt      = receipt,
-                .bill         = bill,
-                .payed        = false
-            });
-        });
-    }
-    else
-    {
-        _require_list.modify( i, get_self(), [&](auto &v) {
-            // clear all payed requirements
-            auto removed = remove_if( v.requirements.begin(), v.requirements.end(), [&](auto &r){return r.payed;} );
-            v.requirements.erase( removed, v.requirements.end() );
-            // check validation
-            if ( v.requirements.size() > get_config<"max_oracle_per_payer"_m>() ) {
-                ROLLBACK( "创建的请求数已超过上限值" );
-            }
-            if ( any_of(v.requirements.begin(), v.requirements.end(), [&](auto &r){return r.receipt == receipt;}) ) {
-                ROLLBACK( "已经发起过同样的请求" );
-            }
-            // push requirement
-            v.requirements.push_back({
-                .require_json = command.to_json(),
-                .require_time = current_time_point().time_since_epoch().count(),
-                .receipt      = receipt,
-                .bill         = bill,
-                .payed        = false
-            });
-        });
-    }
+    if constexpr ( _Opt == "abandoned_timeout"_m )    return _config.get_or_default({60, 5}).abandoned_timeout;
+    if constexpr ( _Opt == "max_oracle_per_payer"_m ) return _config.get_or_default({60, 5}).max_oracle_per_payer;
+}
 
-    // send defered transaction to ensure the payer if payed this require
-    send_timeout_tx( payer, receipt );
-
-    // send inline action to tell payer the receipt of this requirement
-    send_receipt( payer, receipt, bill );
-
-    print( "string(receipt) = ", util::checksum_to_string(receipt) );
+inline tuple<checksum256, asset> NBA::make_receipt( name payer, string &cmd )
+{
+    string source = payer.to_string() + cmd + to_string(current_time_point().time_since_epoch().count());
+    return { sha256(source.c_str(), source.size()), asset(1, symbol("EOS", 4)) };
 }
 
 inline void NBA::send_timeout_tx( name payer, checksum256 receipt, bool send /*= true*/ )
