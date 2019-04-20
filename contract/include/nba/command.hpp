@@ -16,7 +16,7 @@ namespace nba
 {
 
 // fetch games in a period of time
-struct period
+struct period : public util::command<0>
 {
     struct input
     {
@@ -31,7 +31,7 @@ struct period
 };
 
 // fetch one game specified by game's id
-struct specified
+struct specified : public util::command<1>
 {
     struct input
     {
@@ -44,15 +44,25 @@ struct specified
     };
 };
 
+inline void check_require( uint8_t data_type, vector<char> &data )
+{
+    switch ( data_type )
+    {
+        case period::type:    unpack<period::input>( data ); return;
+        case specified::type: unpack<specified::input>( data ); return;
+    }
+    internal_use_do_not_use::eosio_assert( false, "invalid data_type" );
 }
 
-namespace json
+inline void check_response( uint8_t data_type, vector<char> &data )
 {
-
-json_reflect_m( nba::period::input, (lower_bound), upper_bound )
-json_reflect_s( nba::period::output, periodic_games )
-json_reflect_s( nba::specified::input, game_id )
-json_reflect_s( nba::specified::output, specified_game )
+    switch ( data_type )
+    {
+        case period::type:    unpack<period::output>( data ); return;
+        case specified::type: unpack<specified::output>( data ); return;
+    }
+    internal_use_do_not_use::eosio_assert( false, "invalid data_type" );
+}
 
 }
 

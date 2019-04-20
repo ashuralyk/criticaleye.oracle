@@ -31,7 +31,7 @@
             "label": "deploy-native",
             "type": "shell",
             "command": [
-                "ssh vimchain@192.168.100.169 'cleos set contract multibetting /home/vimchain/Starteos/CONTRACTS_DIR/multibetting/'"
+                "ssh vimchain@192.168.100.169 'cleos set contract multibetting /home/vimchain/Starteos/CONTRACTS_DIR/contract/nba/ nba.wasm nba.abi'"
             ],
             "problemMatcher": []
         },

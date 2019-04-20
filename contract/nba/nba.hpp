@@ -11,7 +11,6 @@
 #include <eosio/crypto.hpp>
 #include <eosio/transaction.hpp>
 #include "../include/nba/command.hpp"
-#include "../include/util.hpp"
 
 using namespace eosio;
 using namespace std;
@@ -50,11 +49,12 @@ struct [[eosio::table("oracle"), eosio::contract("oracleos.nba")]] oracle
 {
     struct requirement
     {
-        string      require_json;
-        int64_t     require_time;
-        checksum256 receipt;
-        asset       bill;
-        bool        payed;
+        uint8_t      require_type;
+        vector<char> require_data;
+        int64_t      require_time;
+        checksum256  receipt;
+        asset        bill;
+        bool         payed;
     };
 
     name payer;
@@ -90,14 +90,11 @@ public:
 
     void transfer( name from, name to, asset quantity, string memo );
 
-    // [[eosio::action]]
-    // void require( name payer, string input_json );
-    
     [[eosio::action]]
-    void require( name payer, nba::period::output command );
+    void require( name payer, uint8_t data_type, vector<char> require_data );
 
     [[eosio::action]]
-    void response( name payer, checksum256 receipt, string output_json );
+    void response( name payer, checksum256 receipt, vector<char> response_data );
 
     [[eosio::action]]
     void timeout( name payer, checksum256 receipt );
@@ -109,11 +106,12 @@ private:
     template <int _Opt>
     auto get_config();
 
-    tuple<checksum256, asset> make_receipt( name payer, string &cmd );
+    tuple<checksum256, asset> make_receipt( name payer, string &&cmd );
 
     void send_timeout_tx( name payer, checksum256 receipt, bool send = true );
 
-    void send_receipt( name payer, checksum256 receipt, asset bill );
+    template <typename ..._Args>
+    void send_action( name contract, name method, tuple<_Args...> &&params );
 };
 
 /////////////////////////////////////////////////////////////
@@ -127,7 +125,7 @@ inline auto NBA::get_config()
     if constexpr ( _Opt == "max_oracle_per_payer"_m ) return _config.get_or_default({60, 5}).max_oracle_per_payer;
 }
 
-inline tuple<checksum256, asset> NBA::make_receipt( name payer, string &cmd )
+inline tuple<checksum256, asset> NBA::make_receipt( name payer, string &&cmd )
 {
     string source = payer.to_string() + cmd + to_string(current_time_point().time_since_epoch().count());
     return { sha256(source.c_str(), source.size()), asset(1, symbol("EOS", 4)) };
@@ -155,13 +153,14 @@ inline void NBA::send_timeout_tx( name payer, checksum256 receipt, bool send /*=
     }
 }
 
-inline void NBA::send_receipt( name payer, checksum256 receipt, asset bill )
+template <typename ..._Args>
+inline void NBA::send_action( name contract, name method, tuple<_Args...> &&params )
 {
     action(
         permission_level{ get_self(), "active"_n },
-        payer,
-        "receipt"_n,
-        make_tuple( get_self(), receipt, bill )
+        contract,
+        method,
+        params
     )
     .send();
 }

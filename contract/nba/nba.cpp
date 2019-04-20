@@ -23,25 +23,26 @@ void NBA::transfer( name from, name to, asset quantity, string memo )
             ROLLBACK( "收据信息(" + memo + ", " + quantity.to_string() + ")不存在" );
         } else {
             (*f).payed = true;
+            send_timeout_tx( from, (*f).receipt, false );
         }
     });
 }
 
-void NBA::require( name payer, nba::period::output command )
+void NBA::require( name payer, uint8_t data_type, vector<char> require_data )
 {
     require_auth( payer );
-
-    string input_json = json::parser<nba::period::output>::to_json( command );
+    nba::check_require( data_type, require_data );
 
     checksum256 receipt;
     asset bill;
-    tie(receipt, bill) = make_receipt( payer, input_json );
+    tie(receipt, bill) = make_receipt( payer, string(require_data.data()) );
     if ( auto i = _require_list.find(payer.value); i == _require_list.end() )
     {
         _require_list.emplace( get_self(), [&](auto &v) {
             v.payer = payer;
             v.requirements.push_back({
-                .require_json = input_json,
+                .require_type = data_type,
+                .require_data = require_data,
                 .require_time = current_time_point().time_since_epoch().count(),
                 .receipt      = receipt,
                 .bill         = bill,
@@ -64,7 +65,8 @@ void NBA::require( name payer, nba::period::output command )
             }
             // push requirement
             v.requirements.push_back({
-                .require_json = input_json,
+                .require_type = data_type,
+                .require_data = require_data,
                 .require_time = current_time_point().time_since_epoch().count(),
                 .receipt      = receipt,
                 .bill         = bill,
@@ -77,19 +79,32 @@ void NBA::require( name payer, nba::period::output command )
     send_timeout_tx( payer, receipt );
 
     // send inline action to tell payer the receipt of this requirement
-    send_receipt( payer, receipt, bill );
-
-    print( "string(receipt) = ", util::checksum_to_string(receipt) );
+    send_action( payer, "receipt"_n, make_tuple(get_self(), receipt, bill) );
 }
 
-void NBA::response( name payer, checksum256 receipt, string output_json )
+void NBA::response( name payer, checksum256 receipt, vector<char> response_data )
 {
     require_auth( payer );
+
+    auto i = _require_list.require_find( payer.value, ("玩家(" + payer.to_string() + ")的请求数据不存在").c_str() );
+    if ( auto f = find_if((*i).requirements.begin(), (*i).requirements.end(), [&](auto &r){return r.receipt == receipt;}); f != (*i).requirements.end() )
+    {
+        nba::check_response( (*f).require_type, response_data );
+
+        // send inline action to tell payer there is a response from oracle
+        send_action( payer, "callback"_n, make_tuple(get_self(), receipt, response_data) );
+    }
+    else
+    {
+        ROLLBACK( "玩家(" + payer.to_string() + ")下不存在指定的收据信息：" + util::checksum_to_string(receipt) );
+    }
 }
 
 void NBA::timeout( name payer, checksum256 receipt )
 {
     require_auth( get_self() );
+
+    bool clear = false;
     auto i = _require_list.require_find( payer.value, ("合约存在问题：不存在玩家(" + payer.to_string() + ")的请求数据").c_str() );
     _require_list.modify( i, get_self(), [&](auto &v) {
         auto r = find_if( v.requirements.begin(), v.requirements.end(), [&](auto &val){return val.receipt == receipt;} );
@@ -98,7 +113,13 @@ void NBA::timeout( name payer, checksum256 receipt )
         } else {
             v.requirements.erase( r );
         }
+        clear = v.requirements.empty();
     });
+
+    if ( clear )
+    {
+        _require_list.erase( i );
+    }
 }
 
 void NBA::config( tables::config setting )
