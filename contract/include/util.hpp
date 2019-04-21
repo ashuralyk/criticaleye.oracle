@@ -4,7 +4,10 @@
 
 #include <array>
 #include <string>
-#include <eosio/fixed_bytes.hpp>
+#include <tuple>
+#include <eosio/asset.hpp>
+#include <eosio/crypto.hpp>
+#include <eosio/system.hpp>
 #include <boost/fusion/include/for_each.hpp>
 
 using namespace std;
@@ -12,6 +15,19 @@ using namespace eosio;
 
 namespace util
 {
+
+template <typename T>
+inline void rollback( T &&m )
+{
+    if constexpr ( is_same<T, string>::value )
+    {
+        internal_use_do_not_use::eosio_assert( false, m.c_str() );
+    }
+    if constexpr ( is_same<T, const char *>::value )
+    {
+        internal_use_do_not_use::eosio_assert( false, m );
+    }
+}
 
 template <typename _Checksum>
 string checksum_to_string( _Checksum &checksum )
@@ -43,12 +59,73 @@ _Checksum string_to_checksum( string &bytes )
     }
 }
 
-template <uint8_t _Type>
+template <uint64_t _Contract, char... _Code>
 struct command
 {
-    static const constexpr uint8_t type = _Type;
+    // statics
+    static const constexpr name command_contract = name( _Contract );
+    static const constexpr string_view type_code = string_view{ detail::to_const_char_arr<_Code...>::value, sizeof...(_Code) };
+
+    // members
+    const int64_t generate_time = current_time_point().time_since_epoch().count();
 };
 
+template <typename _First, typename ..._Last>
+int64_t check_data( string_view data_type, vector<char> &data )
+{
+    if ( _First::type_code == data_type )
+    {
+        return unpack<_First>( data ).generate_time;
+    }
+    if constexpr ( sizeof...(_Last) > 0 )
+    {
+        return check_data<_Last...>( data_type, data );
+    }
+    rollback( "invalid data_type while checking packed command data" );
+    return 0;
 }
+
+template <typename ..._Options>
+auto make_receipt( name payer, vector<char> &data )
+{
+    if constexpr ( is_same<tuple<_Options...>, tuple<checksum256, asset>>::value )
+    {
+        string source = payer.to_string() + data.data();
+        return make_tuple( sha256(source.c_str(), source.size()), asset(1, symbol("EOS", 4)) );
+    }
+    else if constexpr ( is_same<tuple<_Options...>, tuple<checksum256>>::value )
+    {
+        string source = payer.to_string() + data.data();
+        return sha256( source.c_str(), source.size() );
+    }
+    else if constexpr ( is_same<tuple<_Options...>, tuple<asset>>::value )
+    {
+        return asset( 1, symbol("EOS", 4) );
+    }
+}
+
+}
+
+// asset operator"" _currency( const char *asset_string )
+// {
+//     string_view sv( asset_string );
+//     auto dot = sv.find( '.' );
+//     auto space = sv.find( ' ' );
+//     if ( dot == string_view::npos || space == string_view::npos || dot == 0 || space == (sv.size() - 1) || space <= (dot + 1) )
+//     {
+//         return asset();
+//     }
+//     else
+//     {
+//         uint8_t precision = static_cast<uint8_t>( space - dot - 1 );
+//         string_view code  = sv.substr( space + 1 );
+//         string_view money = sv.substr( 0, space );
+
+//         string amount( money.data(), money.size() );
+//         amount.erase( amount.find('.') );       
+
+//         return asset( stoll(amount), symbol(code, precision) );
+//     }
+// }
 
 #endif

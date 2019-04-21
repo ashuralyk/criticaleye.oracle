@@ -20,7 +20,7 @@ void NBA::transfer( name from, name to, asset quantity, string memo )
     _require_list.modify( i, get_self(), [&](auto &v) {
         auto f = find_if( v.requirements.begin(), v.requirements.end(), [&](auto &r){return util::checksum_to_string(r.receipt) == memo && r.bill == quantity;} );
         if ( f == v.requirements.end() ) {
-            ROLLBACK( "收据信息(" + memo + ", " + quantity.to_string() + ")不存在" );
+            util::rollback( "收据信息(" + memo + ", " + quantity.to_string() + ")不存在" );
         } else {
             (*f).payed = true;
             send_timeout_tx( from, (*f).receipt, false );
@@ -28,14 +28,16 @@ void NBA::transfer( name from, name to, asset quantity, string memo )
     });
 }
 
-void NBA::require( name payer, uint8_t data_type, vector<char> require_data )
+void NBA::require( name payer, string data_type, vector<char> require_data )
 {
     require_auth( payer );
-    nba::check_require( data_type, require_data );
+    int64_t generate_time = util::check_data<nba::period::input, nba::specified::input>( data_type, require_data );
 
     checksum256 receipt;
     asset bill;
-    tie(receipt, bill) = make_receipt( payer, string(require_data.data()) );
+    tie(receipt, bill) = util::make_receipt<checksum256, asset>( payer, require_data );
+
+    bool privileged = is_privileged( payer );
     if ( auto i = _require_list.find(payer.value); i == _require_list.end() )
     {
         _require_list.emplace( get_self(), [&](auto &v) {
@@ -43,10 +45,10 @@ void NBA::require( name payer, uint8_t data_type, vector<char> require_data )
             v.requirements.push_back({
                 .require_type = data_type,
                 .require_data = require_data,
-                .require_time = current_time_point().time_since_epoch().count(),
+                .require_time = generate_time,
                 .receipt      = receipt,
                 .bill         = bill,
-                .payed        = false
+                .payed        = privileged
             });
         });
     }
@@ -58,45 +60,53 @@ void NBA::require( name payer, uint8_t data_type, vector<char> require_data )
             v.requirements.erase( removed, v.requirements.end() );
             // check validation
             if ( v.requirements.size() > get_config<"max_oracle_per_payer"_m>() ) {
-                ROLLBACK( "创建的请求数已超过上限值" );
+                util::rollback( "创建的请求数已超过上限值" );
             }
             if ( any_of(v.requirements.begin(), v.requirements.end(), [&](auto &r){return r.receipt == receipt;}) ) {
-                ROLLBACK( "已经发起过同样的请求" );
+                util::rollback( "已经发起过同样的请求" );
             }
             // push requirement
             v.requirements.push_back({
                 .require_type = data_type,
                 .require_data = require_data,
-                .require_time = current_time_point().time_since_epoch().count(),
+                .require_time = generate_time,
                 .receipt      = receipt,
                 .bill         = bill,
-                .payed        = false
+                .payed        = privileged
             });
         });
     }
 
-    // send defered transaction to ensure the payer if payed this require
-    send_timeout_tx( payer, receipt );
+    if (! privileged)
+    {
+        // send defered transaction to ensure the payer if payed this requirement
+        send_timeout_tx( payer, receipt );
 
-    // send inline action to tell payer the receipt of this requirement
-    send_action( payer, "receipt"_n, make_tuple(get_self(), receipt, bill) );
+        // send inline action to tell payer the receipt of this requirement
+        send_action( payer, "pay"_n, make_tuple(get_self(), receipt, bill) );
+    }
+    else
+    {
+        // send inline action to tell payer the receipt of this requirement
+        send_action( payer, "pay"_n, make_tuple(get_self(), receipt, "0.0000 EOS") );
+    }
 }
 
-void NBA::response( name payer, checksum256 receipt, vector<char> response_data )
+void NBA::response( name responser, name payer, checksum256 receipt, vector<char> response_data )
 {
-    require_auth( payer );
+    check_authorization( responser );
 
     auto i = _require_list.require_find( payer.value, ("玩家(" + payer.to_string() + ")的请求数据不存在").c_str() );
     if ( auto f = find_if((*i).requirements.begin(), (*i).requirements.end(), [&](auto &r){return r.receipt == receipt;}); f != (*i).requirements.end() )
     {
-        nba::check_response( (*f).require_type, response_data );
+        util::check_data<nba::period::output, nba::specified::output>( (*f).require_type, response_data );
 
         // send inline action to tell payer there is a response from oracle
-        send_action( payer, "callback"_n, make_tuple(get_self(), receipt, response_data) );
+        send_action( payer, "receive"_n, make_tuple(get_self(), receipt, (*f).require_type, response_data) );
     }
     else
     {
-        ROLLBACK( "玩家(" + payer.to_string() + ")下不存在指定的收据信息：" + util::checksum_to_string(receipt) );
+        util::rollback( "玩家(" + payer.to_string() + ")下不存在指定的收据信息：" + util::checksum_to_string(receipt) );
     }
 }
 
@@ -109,7 +119,7 @@ void NBA::timeout( name payer, checksum256 receipt )
     _require_list.modify( i, get_self(), [&](auto &v) {
         auto r = find_if( v.requirements.begin(), v.requirements.end(), [&](auto &val){return val.receipt == receipt;} );
         if ( r == v.requirements.end() ) {
-            ROLLBACK( "合约存在问题：不存在玩家(" + payer.to_string() + ")的指定收据内容的请求数据" );
+            util::rollback( "合约存在问题：不存在玩家(" + payer.to_string() + ")的指定收据内容的请求数据" );
         } else {
             v.requirements.erase( r );
         }
@@ -122,10 +132,43 @@ void NBA::timeout( name payer, checksum256 receipt )
     }
 }
 
-void NBA::config( tables::config setting )
+void NBA::limit( tables::config::limit limit )
 {
     require_auth( get_self() );
-    _config.set( setting, get_self() );
+
+    auto old = _config.get_or_default( tables::config::make() );
+    old.limit_config = limit;
+    _config.set( old, get_self() );
+}
+
+void NBA::auth( name responser, bool add )
+{
+    require_auth( get_self() );
+
+    auto old = _config.get_or_default( tables::config::make() );
+    if ( add )
+    {
+        old.allowed_responsers.insert( responser );
+    }
+    else
+    {
+        old.allowed_responsers.erase( responser );
+    }
+}
+
+void NBA::privilege( name payer, bool add )
+{
+    require_auth( get_self() );
+
+    auto old = _config.get_or_default( tables::config::make() );
+    if ( add )
+    {
+        old.privileged_payers.insert( payer );
+    }
+    else
+    {
+        old.privileged_payers.erase( payer );
+    }
 }
 
 ///////////////////////////////////////////////////////
@@ -142,7 +185,7 @@ void apply( uint64_t receiver, uint64_t code, uint64_t action )
     {
         switch( action ) 
         {
-           EOSIO_DISPATCH_HELPER( NBA, (require)(response)(timeout)(config) )
+           EOSIO_DISPATCH_HELPER( NBA, (require)(response)(timeout)(limit)(auth)(privilege) )
         }
     }
     else
@@ -153,7 +196,7 @@ void apply( uint64_t receiver, uint64_t code, uint64_t action )
         }
         else
         {
-            ROLLBACK( "please make sure the callback must be the transfer from eosio.token" );
+            util::rollback( "please make sure the callback must be the transfer from eosio.token" );
         }
     }
 }

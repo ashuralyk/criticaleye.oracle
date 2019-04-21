@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <tuple>
+#include <set>
 #include <eosio/eosio.hpp>
 #include <eosio/singleton.hpp>
 #include <eosio/asset.hpp>
@@ -15,41 +16,45 @@
 using namespace eosio;
 using namespace std;
 
-template <typename T>
-inline void ROLLBACK( T &&m )
-{
-    if constexpr ( is_same<T, string>::value )
-    {
-        internal_use_do_not_use::eosio_assert( false, m.c_str() );
-    }
-    if constexpr ( is_same<T, const char *>::value )
-    {
-        internal_use_do_not_use::eosio_assert( false, m );
-    }
-}
-
 template <typename T, T... _Opt>
 inline constexpr int operator"" _m ()
 {
     if ( string_view{ detail::to_const_char_arr<_Opt...>::value, sizeof...(_Opt) } == "abandoned_timeout" )    return 0;
     if ( string_view{ detail::to_const_char_arr<_Opt...>::value, sizeof...(_Opt) } == "max_oracle_per_payer" ) return 1;
+    if ( string_view{ detail::to_const_char_arr<_Opt...>::value, sizeof...(_Opt) } == "allowed_responsers" )   return 2;
+    if ( string_view{ detail::to_const_char_arr<_Opt...>::value, sizeof...(_Opt) } == "privileged_payers" )    return 3;
 }
 
 namespace tables
 {
 
-struct [[eosio::table("config"), eosio::contract("oracleos.nba")]] config
+struct [[eosio::table("config"), eosio::contract(nba_contract)]] config
 {
-    uint32_t     abandoned_timeout;
-    uint8_t      max_oracle_per_payer;
-    vector<name> allowed_responsers;
+    struct limit
+    {
+        uint32_t abandoned_timeout;
+        uint8_t  max_oracle_per_payer;
+    };
+
+    limit limit_config;
+    set<name> allowed_responsers;
+    set<name> privileged_payers;
+
+    static config make() {
+        return {
+            .limit_config = {
+                .abandoned_timeout    = 60,
+                .max_oracle_per_payer = 5
+            }
+        };
+    }
 };
 
-struct [[eosio::table("oracle"), eosio::contract("oracleos.nba")]] oracle
+struct [[eosio::table("oracle"), eosio::contract(nba_contract)]] oracle
 {
     struct requirement
     {
-        uint8_t      require_type;
+        string       require_type;
         vector<char> require_data;
         int64_t      require_time;
         checksum256  receipt;
@@ -75,7 +80,7 @@ typedef singleton<"config"_n, tables::config>   config;
 
 }
 
-class [[eosio::contract("oracleos.nba")]] NBA
+class [[eosio::contract(nba_contract)]] NBA
     : public contract
 {
     indices::config _config;
@@ -91,27 +96,35 @@ public:
     void transfer( name from, name to, asset quantity, string memo );
 
     [[eosio::action]]
-    void require( name payer, uint8_t data_type, vector<char> require_data );
+    void require( name payer, string data_type, vector<char> require_data );
 
     [[eosio::action]]
-    void response( name payer, checksum256 receipt, vector<char> response_data );
+    void response( name responser, name payer, checksum256 receipt, vector<char> response_data );
 
     [[eosio::action]]
     void timeout( name payer, checksum256 receipt );
 
     [[eosio::action]]
-    void config( tables::config setting );
+    void limit( tables::config::limit limit );
+
+    [[eosio::action]]
+    void auth( name responser, bool add );
+
+    [[eosio::action]]
+    void privilege( name payer, bool add );
 
 private:
     template <int _Opt>
     auto get_config();
 
-    tuple<checksum256, asset> make_receipt( name payer, string &&cmd );
-
     void send_timeout_tx( name payer, checksum256 receipt, bool send = true );
 
     template <typename ..._Args>
     void send_action( name contract, name method, tuple<_Args...> &&params );
+
+    bool is_privileged( name payer );
+
+    void check_authorization( name responser );
 };
 
 /////////////////////////////////////////////////////////////
@@ -121,14 +134,10 @@ private:
 template <int _Opt>
 inline auto NBA::get_config()
 {
-    if constexpr ( _Opt == "abandoned_timeout"_m )    return _config.get_or_default({60, 5}).abandoned_timeout;
-    if constexpr ( _Opt == "max_oracle_per_payer"_m ) return _config.get_or_default({60, 5}).max_oracle_per_payer;
-}
-
-inline tuple<checksum256, asset> NBA::make_receipt( name payer, string &&cmd )
-{
-    string source = payer.to_string() + cmd + to_string(current_time_point().time_since_epoch().count());
-    return { sha256(source.c_str(), source.size()), asset(1, symbol("EOS", 4)) };
+    if constexpr ( _Opt == "abandoned_timeout"_m )    return _config.get_or_default(tables::config::make()).limit_config.abandoned_timeout;
+    if constexpr ( _Opt == "max_oracle_per_payer"_m ) return _config.get_or_default(tables::config::make()).limit_config.max_oracle_per_payer;
+    if constexpr ( _Opt == "allowed_responsers"_m )   return _config.get_or_default(tables::config::make()).allowed_responsers;
+    if constexpr ( _Opt == "privileged_payers"_m )    return _config.get_or_default(tables::config::make()).privileged_payers;
 }
 
 inline void NBA::send_timeout_tx( name payer, checksum256 receipt, bool send /*= true*/ )
@@ -163,6 +172,19 @@ inline void NBA::send_action( name contract, name method, tuple<_Args...> &&para
         params
     )
     .send();
+}
+
+inline bool NBA::is_privileged( name payer )
+{
+    return get_config<"allowed_responsers"_m>().count( payer ) > 0;
+}
+
+inline void NBA::check_authorization( name responser )
+{
+    if ( get_config<"allowed_responsers"_m>().count(responser) == 0 )
+    {
+        util::rollback( "你不在本NBA合约允许的上报人员列表中，请联系官方客服。" );
+    }
 }
     
 #endif
