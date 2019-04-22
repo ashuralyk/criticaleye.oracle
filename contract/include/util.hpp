@@ -59,23 +59,31 @@ _Checksum string_to_checksum( string &bytes )
     }
 }
 
-template <uint64_t _Contract, char... _Code>
-struct command
+template <typename _Command>
+struct protocol
 {
-    // statics
-    static const constexpr name command_contract = name( _Contract );
-    static const constexpr string_view type_code = string_view{ detail::to_const_char_arr<_Code...>::value, sizeof...(_Code) };
+    // header
+    int64_t generate_time;
 
-    // members
-    const int64_t generate_time = current_time_point().time_since_epoch().count();
+    // body
+    _Command command;
 };
+
+template <typename _Type>
+struct prototype {};
+
+#define prototype(command, contract, type) \
+    template <> struct util::prototype<command> { \
+        static const constexpr name contract_name = name(contract); \
+        static const constexpr string_view type_code = type; \
+    };
 
 template <typename _First, typename ..._Last>
 int64_t check_data( string_view data_type, vector<char> &data )
 {
-    if ( _First::type_code == data_type )
+    if ( prototype<_First>::type_code == data_type )
     {
-        return unpack<_First>( data ).generate_time;
+        return unpack<protocol<_First>>(data).generate_time;
     }
     if constexpr ( sizeof...(_Last) > 0 )
     {

@@ -1,6 +1,6 @@
 
-#ifndef _INCLUDE_GATEWAY_
-#define _INCLUDE_GATEWAY_
+#ifndef _INCLUDE_CRITICALEYE_
+#define _INCLUDE_CRITICALEYE_
 
 #include <map>
 #include <functional>
@@ -23,14 +23,19 @@ public:
     {}
 
     template <typename _Input>
-    void require( name payer, _Input &input ) {
+    checksum256 require( name payer, _Input &&input ) {
+        vector<char> packed_data = pack<util::protocol<_Input>>({
+            .generate_time = current_time_point().time_since_epoch().count(),
+            .command       = input
+        });
         action(
             permission_level{ payer, "active"_n },
-            _Input::contract_name,
+            util::prototype<_Input>::contract_name,
             "require"_n,
-            make_tuple( payer, _Input::type_code, pack(input) )
+            make_tuple( payer, string(util::prototype<_Input>::type_code), packed_data )
         )
         .send();
+        return util::make_receipt<checksum256>( payer, packed_data );
     }
 
     void pay( name server, checksum256 receipt, asset bill ) {
@@ -48,8 +53,8 @@ public:
 
     void receive( name server, checksum256 receipt, string type, vector<char> data ) {
         require_auth( server );
-        if      ( string_view(type) == output_0::type_code ) callback( unpack<output_0>(data) );
-        else if ( string_view(type) == output_1::type_code ) callback( unpack<output_1>(data) );
+        if      ( string_view(type) == util::prototype<output_0>::type_code ) callback( unpack<util::protocol<output_0>>(data).command );
+        else if ( string_view(type) == util::prototype<output_1>::type_code ) callback( unpack<util::protocol<output_1>>(data).command );
         else {
             util::rollback( "遇到无法解析的命令类别: \"" + type + "\"" );
         }

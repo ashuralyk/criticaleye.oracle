@@ -39,7 +39,7 @@
             "label": "open wallet",
             "type": "shell",
             "command": [
-                "ssh vimchain@192.168.100.169 'sh /home/vimchain/Starteos/wiki/unlock_default.sh'"
+                "ssh vimchain@192.168.100.169 'source /home/vimchain/.profile && sh /home/vimchain/Starteos/wiki/unlock_default.sh'"
             ],
             "problemMatcher": []
         }

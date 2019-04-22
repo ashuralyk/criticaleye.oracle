@@ -24,6 +24,7 @@ void NBA::transfer( name from, name to, asset quantity, string memo )
         } else {
             (*f).payed = true;
             send_timeout_tx( from, (*f).receipt, false );
+            print( "玩家\"" + from.to_string() + "\"" + "已完成支付(收据：" + memo + ")" );
         }
     });
 }
@@ -110,6 +111,14 @@ void NBA::response( name responser, name payer, checksum256 receipt, vector<char
     }
 }
 
+void NBA::test( name responser, name payer, checksum256 receipt, nba::period::output response_data )
+{
+    response( responser, payer, receipt, pack<util::protocol<nba::period::output>>({
+        .generate_time = current_time_point().time_since_epoch().count(),
+        .command       = response_data
+    }));
+}
+
 void NBA::timeout( name payer, checksum256 receipt )
 {
     require_auth( get_self() );
@@ -185,7 +194,7 @@ void apply( uint64_t receiver, uint64_t code, uint64_t action )
     {
         switch( action ) 
         {
-           EOSIO_DISPATCH_HELPER( NBA, (require)(response)(timeout)(limit)(auth)(privilege) )
+           EOSIO_DISPATCH_HELPER( NBA, (require)(response)(test)(timeout)(limit)(auth)(privilege) )
         }
     }
     else

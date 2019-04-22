@@ -102,6 +102,9 @@ public:
     void response( name responser, name payer, checksum256 receipt, vector<char> response_data );
 
     [[eosio::action]]
+    void test( name responser, name payer, checksum256 receipt, nba::period::output response_data );
+
+    [[eosio::action]]
     void timeout( name payer, checksum256 receipt );
 
     [[eosio::action]]

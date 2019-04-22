@@ -5,55 +5,37 @@
 #include <vector>
 #include <string>
 #include <tuple>
-#include <eosio/eosio.hpp>
 #include "data.hpp"
 #include "../util.hpp"
 
 using namespace std;
 using namespace eosio;
 
-#define nba_contract       "oracleosxnba"
-#define nba_command_code_0 'n', 'b', 'a', '.', 'p', 'e', 'r', 'i', 'o', 'd', '.', 'i', 'n', 'p', 'u', 't', '.', 'v', '0'
-#define nba_command_code_1 'n', 'b', 'a', '.', 'p', 'e', 'r', 'i', 'o', 'd', '.', 'i', 'n', 'p', 'u', 't', '.', 'v', '0'
-#define nba_command_code_2 'n', 'b', 'a', '.', 's', 'p', 'e', 'c', 'i', 'f', 'i', 'e', 'd', '.', 'i', 'n', 'p', 'u', 't', '.', 'v', '0'
-#define nba_command_code_3 'n', 'b', 'a', '.', 's', 'p', 'e', 'c', 'i', 'f', 'i', 'e', 'd', '.', 'o', 'u', 't', 'p', 'u', 't', '.', 'v', '0'
-
-namespace nba
+struct nba_period_input
 {
+    uint32_t lower_bound;
+    uint32_t upper_bound;
+};
 
-// fetch games in a period of time
-namespace period
+struct nba_period_output
 {
-    struct input 
-        : public util::command<name(nba_contract).value, nba_command_code_0>
-    {
-        uint32_t lower_bound;
-        uint32_t upper_bound;
-    };
+    vector<nba::data> periodic_games;
+};
 
-    struct output
-        : public util::command<name(nba_contract).value, nba_command_code_1>
-    {
-        vector<nba::data> periodic_games;
-    };
-}
-
-// fetch one game specified by game's id
-namespace specified
+struct nba_specified_input
 {
-    struct input 
-        : public util::command<name(nba_contract).value, nba_command_code_2>
-    {
-        string game_id;
-    };
+    string game_id;
+};
 
-    struct output
-        : public util::command<name(nba_contract).value, nba_command_code_3>
-    {
-        nba::data specified_game;
-    };
-}
+struct nba_specified_output
+{
+    nba::data specified_game;
+};
 
-}
+#define nba_contract "oracleosxnba"
+prototype( nba_period_input,     nba_contract, "nba.period.input.v1" )
+prototype( nba_period_output,    nba_contract, "nba.period.output.v1" )
+prototype( nba_specified_input,  nba_contract, "nba.specified.input.v1" )
+prototype( nba_specified_output, nba_contract, "nba.specified.output.v1" )
 
 #endif
