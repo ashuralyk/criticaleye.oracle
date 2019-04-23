@@ -19,13 +19,13 @@ namespace util
 template <typename T>
 inline void rollback( T &&m )
 {
-    if constexpr ( is_same<T, string>::value )
+    if constexpr ( is_same<decay_t<T>, string_view>::value )
     {
-        internal_use_do_not_use::eosio_assert( false, m.c_str() );
+        check( false, m.data(), m.size() );
     }
-    if constexpr ( is_same<T, const char *>::value )
+    else
     {
-        internal_use_do_not_use::eosio_assert( false, m );
+        check( false, m );
     }
 }
 
@@ -114,26 +114,27 @@ auto make_receipt( name payer, vector<char> &data )
 
 }
 
-// asset operator"" _currency( const char *asset_string )
-// {
-//     string_view sv( asset_string );
-//     auto dot = sv.find( '.' );
-//     auto space = sv.find( ' ' );
-//     if ( dot == string_view::npos || space == string_view::npos || dot == 0 || space == (sv.size() - 1) || space <= (dot + 1) )
-//     {
-//         return asset();
-//     }
-//     else
-//     {
-//         uint8_t precision = static_cast<uint8_t>( space - dot - 1 );
-//         string_view code  = sv.substr( space + 1 );
-//         string_view money = sv.substr( 0, space );
+template <typename T, T... _Asset>
+asset operator"" _currency()
+{
+    string_view sv{ detail::to_const_char_arr<_Asset...>::value, sizeof...(_Asset) };
+    auto dot = sv.find( '.' );
+    auto space = sv.find( ' ' );
+    if ( dot == string_view::npos || space == string_view::npos || dot == 0 || space == (sv.size() - 1) || space <= (dot + 1) )
+    {
+        return asset();
+    }
+    else
+    {
+        uint8_t precision = static_cast<uint8_t>( space - dot - 1 );
+        string_view code  = sv.substr( space + 1 );
+        string_view money = sv.substr( 0, space );
 
-//         string amount( money.data(), money.size() );
-//         amount.erase( amount.find('.') );       
+        string amount( money.data(), money.size() );
+        amount.erase( amount.find('.') );       
 
-//         return asset( stoll(amount), symbol(code, precision) );
-//     }
-// }
+        return asset( stoll(amount), symbol(code, precision) );
+    }
+}
 
 #endif

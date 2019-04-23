@@ -13,18 +13,22 @@ void test::receive( name server, checksum256 receipt, string type, vector<char> 
 
 void test::require( string type )
 {
+    require_auth( get_self() );
+
     if ( type == "period" )
     {
-        criticaleye::require<nba::period::input>( get_self(), {
+        auto receipt = criticaleye::require<nba_period_input>( get_self(), {
             .lower_bound = 0,
             .upper_bound = 1000
         });
+        print( "receipt(period) = ", receipt );
     }
     else if ( type == "specified" )
     {
-        criticaleye::require<nba::specified::input>( get_self(), {
+        auto receipt = criticaleye::require<nba_specified_input>( get_self(), {
             .game_id = "mm-xx-00001"
         });
+        print( "receipt(specified) = ", receipt );
     }
     else
     {
@@ -32,18 +36,18 @@ void test::require( string type )
     }
 }
 
-void test::callback( nba::period::output &&output )
+void test::callback( nba_period_output &&output )
 {
-    print( "nba::period::output: " );
+    print( "nba_period_output: " );
     for ( auto &v : output.periodic_games )
     {
         print( " > ", v.game_id );
     }
 }
 
-void test::callback( nba::specified::output &&output )
+void test::callback( nba_specified_output &&output )
 {
-    print( "nba::specified::output: > ", output.specified_game.game_id );
+    print( "nba_specified_output: > ", output.specified_game.game_id );
 }
 
-EOSIO_DISPATCH( test, (pay)(receive) )
+EOSIO_DISPATCH( test, (pay)(receive)(require) )

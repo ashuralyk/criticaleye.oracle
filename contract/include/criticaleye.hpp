@@ -5,7 +5,8 @@
 #include <map>
 #include <functional>
 #include <variant>
-#include "./nba/command.hpp"
+#include <eosio/eosio.hpp>
+#include "nba/command.hpp"
 
 using namespace std;
 using namespace eosio;
@@ -14,8 +15,8 @@ class criticaleye
     : public contract
 {
 
-using output_0 = nba::period::output;
-using output_1 = nba::specified::output;
+using output_0 = nba_period_output;
+using output_1 = nba_specified_output;
 
 public:
     criticaleye( name self, name first_receiver, datastream<const char *> ds )

@@ -18,7 +18,7 @@ public:
     [[eosio::action]]
     void require( string type );
 
-    void callback( nba::period::output &&output ) override;
+    void callback( nba_period_output &&output ) override;
 
-    void callback( nba::specified::output &&output ) override;
+    void callback( nba_specified_output &&output ) override;
 };

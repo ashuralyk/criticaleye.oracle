@@ -33,9 +33,9 @@ struct nba_specified_output
 };
 
 #define nba_contract "oracleosxnba"
-prototype( nba_period_input,     nba_contract, "nba.period.input.v1" )
-prototype( nba_period_output,    nba_contract, "nba.period.output.v1" )
-prototype( nba_specified_input,  nba_contract, "nba.specified.input.v1" )
-prototype( nba_specified_output, nba_contract, "nba.specified.output.v1" )
+prototype( nba_period_input,     nba_contract, "nba.period.v1" )
+prototype( nba_period_output,    nba_contract, "nba.period.v1" )
+prototype( nba_specified_input,  nba_contract, "nba.specified.v1" )
+prototype( nba_specified_output, nba_contract, "nba.specified.v1" )
 
 #endif

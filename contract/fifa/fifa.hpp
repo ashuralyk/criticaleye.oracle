@@ -34,8 +34,8 @@ public:
     }
 
     [[eosio::action]]
-    void test( name responser, name payer, checksum256 receipt, nba_period_output response_data/*, nba_specified_output data_2*/ ) {
-        response( responser, payer, receipt, pack<util::protocol<nba_period_output>>({
+    void test( name responser, name payer, checksum256 receipt, nba_specified_output response_data ) {
+        response( responser, payer, receipt, pack<util::protocol<nba_specified_output>>({
             .generate_time = current_time_point().time_since_epoch().count(),
             .command       = response_data
         }));
@@ -59,6 +59,16 @@ public:
     [[eosio::action]]
     void privilege( name payer, bool add ) {
         parent::privilege( payer, add );
+    }
+
+    [[eosio::action]]
+    void ban( name payer, bool add ) {
+        parent::ban( payer, add );
+    }
+
+    [[eosio::action]]
+    void clear() {
+        parent::clear();
     }
 };
 
