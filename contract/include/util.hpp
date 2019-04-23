@@ -112,6 +112,11 @@ auto make_receipt( name payer, vector<char> &data )
     }
 }
 
+int64_t now()
+{
+    return current_time_point().time_since_epoch().count();
+}
+
 }
 
 template <typename T, T... _Asset>

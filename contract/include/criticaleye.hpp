@@ -26,7 +26,7 @@ public:
     template <typename _Input>
     checksum256 require( name payer, _Input &&input ) {
         vector<char> packed_data = pack<util::protocol<_Input>>({
-            .generate_time = current_time_point().time_since_epoch().count(),
+            .generate_time = now(),
             .command       = input
         });
         action(

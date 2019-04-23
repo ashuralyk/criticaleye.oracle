@@ -18,6 +18,8 @@
 using namespace eosio;
 using namespace std;
 
+#define _DEBUG_
+
 template <typename T, T... _Opt>
 inline constexpr int operator"" _m ()
 {
@@ -270,7 +272,6 @@ public:
                 addon( history );
                 make_history( payer, move(history) );
 
-                // TODO: 要改成发送交易
                 // send inline action to tell payer there is a response from oracle
                 send_action( payer, "receive"_n, make_tuple(get_self(), receipt, (*f).require_type, response_data) );
             }
@@ -375,6 +376,7 @@ protected:
     template <typename ..._Args>
     void send_action( name contract, name method, tuple<_Args...> &&params )
     {
+#ifdef _DEBUG_
         action(
             permission_level{ get_self(), "active"_n },
             contract,
@@ -382,6 +384,16 @@ protected:
             params
         )
         .send();
+#else
+        transaction tx;
+        tx.actions.push_back( action (
+            permission_level{ get_self(), "active"_n },
+            contract,
+            method,
+            params
+        ));
+        tx.send( contract.value << 64 | static_cast<uint64_t>(now()), get_self() );
+#endif
     }
 
     bool is_privileged( name payer )
@@ -448,7 +460,22 @@ protected:
 
     void make_history( name payer, typename _Record::history_t &&history )
     {
-
+        if ( auto i = _history_list.find(payer.value); i == _history_list.end() )
+        {
+            _history_list.emplace( get_self(), [&](auto &v) {
+                v.payer = payer;
+                v.response_history.push_back( history );
+            });
+        }
+        else
+        {
+            _history_list.modify( i, get_self(), [&](auto &v) {
+                v.response_history.push_back( history );
+                while ( v.response_history.size() > get_config<"max_record_per_payer"_m>() ) {
+                    v.response_history.erase( v.response_history.begin() );
+                }
+            });
+        }
     }
 };
 
