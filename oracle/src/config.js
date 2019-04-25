@@ -46,13 +46,13 @@ const config = {
                 timeout: 5000,
                 mspf: 1500,
                 contract: {
-                    code:   'nbasportsaaa',
-                    scope:  'nbasportsaaa',
+                    code:   'oracleosxnba',
+                    scope:  'oracleosxnba',
                     table:  'oracle',
-                    upload: 'answer'
+                    upload: 'response'
                 }
             },
-            use: ['fifa', 'nba']
+            use: ['nba']
         },
 
         handler: {

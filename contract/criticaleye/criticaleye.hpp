@@ -67,11 +67,11 @@ struct config
     }
 };
 
-struct requirement
+struct request
 {
-    string       require_type;
-    vector<char> require_data;
-    int64_t      require_time;
+    string       request_type;
+    vector<char> request_data;
+    int64_t      request_time;
     checksum256  receipt;
     asset        bill;
     bool         payed;
@@ -79,15 +79,15 @@ struct requirement
 };
 
 template <
-    typename _Requirement = requirement, 
-    typename enable_if<is_base_of<requirement, _Requirement>::value, int>::type = 0
+    typename _Request = request,
+    typename enable_if<is_base_of<request, _Request>::value, int>::type = 0
 >
 struct oracle
 {
-    typedef _Requirement requirement_t;
+    typedef _Request request_t;
 
     name payer;
-    vector<_Requirement> requirements;
+    vector<_Request> requests;
 
     uint64_t primary_key() const {
         return payer.value;
@@ -122,7 +122,7 @@ struct record
 
 template <
     typename _Oracle = base::oracle<>, typename _Config = base::config<>, typename _Record = base::record<>,
-    typename enable_if<is_base_of<base::oracle<typename _Oracle::requirement_t>, _Oracle>::value, int>::type = 0,
+    typename enable_if<is_base_of<base::oracle<typename _Oracle::request_t>, _Oracle>::value, int>::type = 0,
     typename enable_if<is_base_of<base::config<typename _Config::limit_t>, _Config>::value, int>::type = 0,
     typename enable_if<is_base_of<base::record<typename _Record::history_t>, _Record>::value, int>::type = 0
 >
@@ -166,8 +166,8 @@ public:
         auto i = _require_list.require_find( from.value, ("玩家(" + from.to_string() + ")的请求数据不存在").c_str() );
 
         _require_list.modify( i, get_self(), [&](auto &v) {
-            auto f = find_if( v.requirements.begin(), v.requirements.end(), [&](auto &r){return util::checksum_to_string(r.receipt) == memo && r.bill == quantity;} );
-            if ( f == v.requirements.end() ) {
+            auto f = find_if( v.requests.begin(), v.requests.end(), [&](auto &r){return util::checksum_to_string(r.receipt) == memo && r.bill == quantity;} );
+            if ( f == v.requests.end() ) {
                 util::rollback( "收据信息(" + memo + ", " + quantity.to_string() + ")不存在" );
             } else {
                 (*f).payed = true;
@@ -179,24 +179,24 @@ public:
 
     // [[eosio::action]]
     template <typename ..._Inputs>
-    void require( name payer, string data_type, vector<char> require_data, function<void(_Oracle &)> addon = [](_Oracle &){} )
+    void require( name payer, string data_type, vector<char> request_data, function<void(_Oracle &)> addon = [](_Oracle &){} )
     {
         check_prohibition( payer );
-        int64_t generate_time = util::check_data<_Inputs...>( data_type, require_data );
+        int64_t generate_time = util::check_data<_Inputs...>( data_type, request_data );
 
         checksum256 receipt;
         asset bill;
-        tie(receipt, bill) = util::make_receipt<checksum256, asset>( payer, require_data );
+        tie(receipt, bill) = util::make_receipt<checksum256, asset>( payer, request_data );
 
         bool privileged = is_privileged( payer );
         if ( auto i = _require_list.find(payer.value); i == _require_list.end() )
         {
             _require_list.emplace( get_self(), [&](auto &v) {
                 v.payer = payer;
-                v.requirements.push_back({
-                    .require_type = data_type,
-                    .require_data = require_data,
-                    .require_time = generate_time,
+                v.requests.push_back({
+                    .request_type = data_type,
+                    .request_data = request_data,
+                    .request_time = generate_time,
                     .receipt      = receipt,
                     .bill         = bill,
                     .payed        = privileged,
@@ -208,21 +208,21 @@ public:
         else
         {
             _require_list.modify( i, get_self(), [&](auto &v) {
-                // clear all responsed requirements
-                auto removed = remove_if( v.requirements.begin(), v.requirements.end(), [&](auto &r){return r.responsed;} );
-                v.requirements.erase( removed, v.requirements.end() );
+                // clear all responsed requests
+                auto removed = remove_if( v.requests.begin(), v.requests.end(), [&](auto &r){return r.responsed;} );
+                v.requests.erase( removed, v.requests.end() );
                 // check validation
-                if ( v.requirements.size() > get_config<"max_oracle_per_payer"_m>() ) {
+                if ( v.requests.size() > get_config<"max_oracle_per_payer"_m>() ) {
                     util::rollback( "创建的请求数已超过上限值" );
                 }
-                if ( any_of(v.requirements.begin(), v.requirements.end(), [&](auto &r){return r.receipt == receipt;}) ) {
+                if ( any_of(v.requests.begin(), v.requests.end(), [&](auto &r){return r.receipt == receipt;}) ) {
                     util::rollback( "已经发起过同样的请求" );
                 }
-                // push requirement
-                v.requirements.push_back({
-                    .require_type = data_type,
-                    .require_data = require_data,
-                    .require_time = generate_time,
+                // push request
+                v.requests.push_back({
+                    .request_type = data_type,
+                    .request_data = request_data,
+                    .request_time = generate_time,
                     .receipt      = receipt,
                     .bill         = bill,
                     .payed        = privileged,
@@ -234,15 +234,15 @@ public:
 
         if ( privileged )
         {
-            // send inline action to tell payer the receipt of this requirement
+            // send inline action to tell payer the receipt of this request
             send_action( payer, "pay"_n, make_tuple(get_self(), receipt, "0.0000 EOS"_currency) );
         }
         else
         {
-            // send defered transaction to ensure the payer if payed this requirement
+            // send defered transaction to ensure the payer if payed this request
             send_timeout_tx( payer, receipt );
 
-            // send inline action to tell payer the receipt of this requirement
+            // send inline action to tell payer the receipt of this request
             send_action( payer, "pay"_n, make_tuple(get_self(), receipt, bill) );
         }
     }
@@ -255,17 +255,17 @@ public:
 
         auto i = _require_list.require_find( payer.value, ("玩家(" + payer.to_string() + ")的请求数据不存在").c_str() );
         _require_list.modify( i, get_self(), [&](auto &v) {
-            if ( auto f = find_if(v.requirements.begin(), v.requirements.end(), [&](auto &r){return r.receipt == receipt;});
-                f != v.requirements.end() )
+            if ( auto f = find_if(v.requests.begin(), v.requests.end(), [&](auto &r){return r.receipt == receipt;});
+                f != v.requests.end() )
             {
                 // check data and alter state
-                int64_t generate_time = util::check_data<_Outputs...>( (*f).require_type, response_data );
+                int64_t generate_time = util::check_data<_Outputs...>( (*f).request_type, response_data );
                 (*f).responsed = true;
 
                 // make response history
                 history_t history = {
                     .receipt       = receipt,
-                    .response_type = (*f).require_type,
+                    .response_type = (*f).request_type,
                     .response_data = response_data,
                     .response_time = generate_time
                 };
@@ -273,7 +273,7 @@ public:
                 make_history( payer, move(history) );
 
                 // send inline action to tell payer there is a response from oracle
-                send_action( payer, "receive"_n, make_tuple(get_self(), receipt, (*f).require_type, response_data) );
+                send_action( payer, "receive"_n, make_tuple(get_self(), receipt, (*f).request_type, response_data) );
             }
             else
             {
@@ -290,13 +290,13 @@ public:
         bool clear = false;
         auto i = _require_list.require_find( payer.value, ("合约存在问题：不存在玩家(" + payer.to_string() + ")的请求数据").c_str() );
         _require_list.modify( i, get_self(), [&](auto &v) {
-            auto r = find_if( v.requirements.begin(), v.requirements.end(), [&](auto &val){return val.receipt == receipt;} );
-            if ( r == v.requirements.end() ) {
+            auto r = find_if( v.requests.begin(), v.requests.end(), [&](auto &val){return val.receipt == receipt;} );
+            if ( r == v.requests.end() ) {
                 util::rollback( "合约存在问题：不存在玩家(" + payer.to_string() + ")的指定收据内容的请求数据" );
             } else {
-                v.requirements.erase( r );
+                v.requests.erase( r );
             }
-            clear = v.requirements.empty();
+            clear = v.requests.empty();
         });
 
         if ( clear )
