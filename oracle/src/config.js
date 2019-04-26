@@ -37,7 +37,7 @@ const config = {
                     code:   'nbasportsaaa',
                     scope:  'nbasportsaaa',
                     table:  'oracle',
-                    upload: 'answer'
+                    action: 'answer'
                 }
             },
             nba: {
@@ -49,7 +49,15 @@ const config = {
                     code:   'oracleosxnba',
                     scope:  'oracleosxnba',
                     table:  'oracle',
-                    upload: 'response'
+                    action: 'response',
+                    inputs: {
+                        'nba.period.v1': 'nba_period_input',
+                        'nba.specified.v1': 'nba_specified_input'
+                    },
+                    outputs: {
+                        'nba.period.v1': 'nba_period_output',
+                        'nba.specified.v1': 'nba_specified_output'
+                    }
                 }
             },
             use: ['nba']

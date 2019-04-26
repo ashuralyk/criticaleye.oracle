@@ -123,7 +123,7 @@ struct record
 template <
     typename _Oracle = base::oracle<>, typename _Config = base::config<>, typename _Record = base::record<>,
     typename enable_if<is_base_of<base::oracle<typename _Oracle::request_t>, _Oracle>::value, int>::type = 0,
-    typename enable_if<is_base_of<base::config<typename _Config::limit_t>, _Config>::value, int>::type = 0,
+    typename enable_if<is_base_of<base::config<typename _Config::limit_t>, _Config>::value, int>::type   = 0,
     typename enable_if<is_base_of<base::record<typename _Record::history_t>, _Record>::value, int>::type = 0
 >
 class criticaleye
@@ -256,8 +256,7 @@ public:
         auto i = _require_list.require_find( payer.value, ("玩家(" + payer.to_string() + ")的请求数据不存在").c_str() );
         _require_list.modify( i, get_self(), [&](auto &v) {
             if ( auto f = find_if(v.requests.begin(), v.requests.end(), [&](auto &r){return r.receipt == receipt;});
-                f != v.requests.end() )
-            {
+                    f != v.requests.end() ) {
                 // check data and alter state
                 int64_t generate_time = util::check_data<_Outputs...>( (*f).request_type, response_data );
                 (*f).responsed = true;
@@ -274,9 +273,7 @@ public:
 
                 // send inline action to tell payer there is a response from oracle
                 send_action( payer, "receive"_n, make_tuple(get_self(), receipt, (*f).request_type, response_data) );
-            }
-            else
-            {
+            } else {
                 util::rollback( "玩家(" + payer.to_string() + ")下不存在指定的收据信息：" + util::checksum_to_string(receipt) );
             }
         });
@@ -442,9 +439,13 @@ protected:
             }
 
             name user = who;
-            if constexpr ( _Which == "allowed_responsers"_m ) add ? [&]{value.allowed_responsers.insert(user);}() : [&]{value.allowed_responsers.erase(user);}();
-            if constexpr ( _Which == "privileged_payers"_m )  add ? [&]{value.privileged_payers.insert(user);}()  : [&]{value.privileged_payers.erase(user);}();
-            if constexpr ( _Which == "banned_payers"_m )      add ? [&]{value.banned_payers.insert(user);}()      : [&]{value.banned_payers.erase(user);}();
+            if      constexpr ( _Which == "allowed_responsers"_m ) add ? [&]{value.allowed_responsers.insert(user);}() : [&]{value.allowed_responsers.erase(user);}();
+            else if constexpr ( _Which == "privileged_payers"_m )  add ? [&]{value.privileged_payers.insert(user);}()  : [&]{value.privileged_payers.erase(user);}();
+            else if constexpr ( _Which == "banned_payers"_m )      add ? [&]{value.banned_payers.insert(user);}()      : [&]{value.banned_payers.erase(user);}();
+            else
+            {
+                print( "please make sure you passed the correct _Which to 'alter_config', check the code" );
+            }
         }
         else if constexpr ( is_same<tuple<decay_t<_Params>...>, tuple<typename _Config::limit_t>>::value )
         {
@@ -452,7 +453,7 @@ protected:
         }
         else
         {
-            print( "please make sure you passed the correct params to 'alter_config', check the code" );
+            print( "please make sure you passed the correct _Params to 'alter_config', check the code" );
         }
 
         _config.set( value, get_self() );

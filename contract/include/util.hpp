@@ -78,6 +78,12 @@ struct prototype {};
         static const constexpr string_view type_code = type; \
     };
 
+#define protocol(proto, type) \
+    struct proto { \
+        int64_t generate_time; \
+        type command; \
+    };
+
 template <typename _First, typename ..._Last>
 int64_t check_data( string_view data_type, vector<char> &data )
 {

@@ -11,31 +11,35 @@
 using namespace std;
 using namespace eosio;
 
-struct nba_period_input
+namespace nba
+{
+
+struct period_input
 {
     uint32_t lower_bound;
     uint32_t upper_bound;
 };
 
-struct nba_period_output
+struct period_output
 {
     vector<nba::data> periodic_games;
 };
 
-struct nba_specified_input
+struct specified_input
 {
     string game_id;
 };
 
-struct nba_specified_output
+struct specified_output
 {
     nba::data specified_game;
 };
 
-#define nba_contract "oracleosxnba"
-prototype( nba_period_input,     nba_contract, "nba.period.v1" )
-prototype( nba_period_output,    nba_contract, "nba.period.v1" )
-prototype( nba_specified_input,  nba_contract, "nba.specified.v1" )
-prototype( nba_specified_output, nba_contract, "nba.specified.v1" )
+}
+
+prototype( nba::period_input,     nba_contract, "nba.period.v1" )
+prototype( nba::period_output,    nba_contract, "nba.period.v1" )
+prototype( nba::specified_input,  nba_contract, "nba.specified.v1" )
+prototype( nba::specified_output, nba_contract, "nba.specified.v1" )
 
 #endif

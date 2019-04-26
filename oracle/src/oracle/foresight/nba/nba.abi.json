@@ -1,0 +1,173 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.1",
+    "types": [],
+    "structs": [
+        {
+            "name": "commands",
+            "base": "",
+            "fields": [
+                {
+                    "name": "",
+                    "type": "nba_period_input"
+                },
+                {
+                    "name": "",
+                    "type": "nba_period_output"
+                },
+                {
+                    "name": "",
+                    "type": "nba_specified_input"
+                },
+                {
+                    "name": "",
+                    "type": "nba_specified_output"
+                }
+            ]
+        },
+        {
+            "name": "data",
+            "base": "",
+            "fields": [
+                {
+                    "name": "game_id",
+                    "type": "string"
+                },
+                {
+                    "name": "game_start_time",
+                    "type": "uint32"
+                },
+                {
+                    "name": "game_end_time",
+                    "type": "uint32"
+                },
+                {
+                    "name": "home_team_id",
+                    "type": "uint8"
+                },
+                {
+                    "name": "home_team_score",
+                    "type": "uint8"
+                },
+                {
+                    "name": "away_team_id",
+                    "type": "uint8"
+                },
+                {
+                    "name": "away_team_score",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "nba_period_input",
+            "base": "",
+            "fields": [
+                {
+                    "name": "generate_time",
+                    "type": "int64"
+                },
+                {
+                    "name": "command",
+                    "type": "period_input"
+                }
+            ]
+        },
+        {
+            "name": "nba_period_output",
+            "base": "",
+            "fields": [
+                {
+                    "name": "generate_time",
+                    "type": "int64"
+                },
+                {
+                    "name": "command",
+                    "type": "period_output"
+                }
+            ]
+        },
+        {
+            "name": "nba_specified_input",
+            "base": "",
+            "fields": [
+                {
+                    "name": "generate_time",
+                    "type": "int64"
+                },
+                {
+                    "name": "command",
+                    "type": "specified_input"
+                }
+            ]
+        },
+        {
+            "name": "nba_specified_output",
+            "base": "",
+            "fields": [
+                {
+                    "name": "generate_time",
+                    "type": "int64"
+                },
+                {
+                    "name": "command",
+                    "type": "specified_output"
+                }
+            ]
+        },
+        {
+            "name": "period_input",
+            "base": "",
+            "fields": [
+                {
+                    "name": "lower_bound",
+                    "type": "uint32"
+                },
+                {
+                    "name": "upper_bound",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "period_output",
+            "base": "",
+            "fields": [
+                {
+                    "name": "periodic_games",
+                    "type": "data[]"
+                }
+            ]
+        },
+        {
+            "name": "specified_input",
+            "base": "",
+            "fields": [
+                {
+                    "name": "game_id",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "specified_output",
+            "base": "",
+            "fields": [
+                {
+                    "name": "specified_game",
+                    "type": "data"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "commands",
+            "type": "commands",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [],
+    "ricardian_clauses": [],
+    "variants": []
+}

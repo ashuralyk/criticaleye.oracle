@@ -29,17 +29,17 @@ public:
 
     [[eosio::action]]
     void require( name payer, string data_type, vector<char> request_data ) {
-        parent::require<nba_period_input, nba_specified_input>( payer, data_type, request_data );
+        parent::require<nba::period_input, nba::specified_input>( payer, data_type, request_data );
     }
 
     [[eosio::action]]
     void response( name responser, name payer, checksum256 receipt, vector<char> response_data ) {
-        parent::response<nba_period_output, nba_specified_output>( responser, payer, receipt, response_data );
+        parent::response<nba::period_output, nba::specified_output>( responser, payer, receipt, response_data );
     }
 
     [[eosio::action]]
-    void test( name responser, name payer, checksum256 receipt, nba_specified_output response_data ) {
-        response( responser, payer, receipt, pack<util::protocol<nba_specified_output>>({
+    void test( name responser, name payer, checksum256 receipt, nba::specified_output response_data ) {
+        response( responser, payer, receipt, pack<util::protocol<nba::specified_output>>({
             .generate_time = current_time_point().time_since_epoch().count(),
             .command       = response_data
         }));
