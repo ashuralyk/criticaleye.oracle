@@ -15,8 +15,8 @@ class criticaleye
     : public contract
 {
 
-using output_0 = nba_period_output;
-using output_1 = nba_specified_output;
+using output_0 = nba::period_output;
+using output_1 = nba::specified_output;
 
 public:
     criticaleye( name self, name first_receiver, datastream<const char *> ds )
@@ -26,7 +26,7 @@ public:
     template <typename _Input>
     checksum256 require( name payer, _Input &&input ) {
         vector<char> packed_data = pack<util::protocol<_Input>>({
-            .generate_time = now(),
+            .generate_time = util::now(),
             .command       = input
         });
         action(

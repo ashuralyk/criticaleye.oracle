@@ -1,11 +1,11 @@
 
 import { Api, JsonRpc } from 'eosjs'
 import Fetch from 'node-fetch'
-import { getEosio, getHandler } from '../../config'
+import Config from '../../config'
 import { TextEncoder, TextDecoder } from 'util'
-import * as Serialize from './eosjs-serialize';
+import * as Serialize from 'eosjs/dist/eosjs-serialize';
 
-const rpc = new JsonRpc(getEosio('network'), { Fetch })
+const rpc = new JsonRpc(Config.getEosio('network'), { Fetch })
 const api = new Api({ rpc, signatureProvider: null, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() })
 
 export default {
@@ -20,7 +20,7 @@ export default {
             upper_bound:    params.upper_bound,
             index_position: params.index_position
         })
-        .catch(getHandler('error'))
+        .catch(Config.getHandler('error'))
     },
 
     async pushTransaction(signatures, jsonTransaction) {
@@ -29,7 +29,7 @@ export default {
             signatures:            signatures,
             serializedTransaction: serializedTransaction
         })
-        .catch(getHandler('error'))
+        .catch(Config.getHandler('error'))
     },
 
     generateAbiTypes( abi ) {

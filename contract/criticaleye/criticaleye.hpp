@@ -61,7 +61,8 @@ struct config
             .limit_config = {
                 .contract_freezed     = false,
                 .abandoned_timeout    = 60,
-                .max_oracle_per_payer = 5
+                .max_oracle_per_payer = 5,
+                .max_record_per_payer = 5
             }
         };
     }

@@ -1,7 +1,7 @@
 
 import Http from 'http'
 import SockIO from 'socket.io'
-import * as Config from '../../config'
+import Config from '../../config'
 
 class DataFeederManager {
     constructor() {
@@ -67,40 +67,42 @@ class DataFeederManager {
     }
 }
 
-export function makeForesightServer(foresightName) {
-    let dataFeederManager = new DataFeederManager()
-    let http = Http.createServer()
-    let io = SockIO(http)
+export default {
+    makeForesightServer(foresightName) {
+        let dataFeederManager = new DataFeederManager()
+        let http = Http.createServer()
+        let io = SockIO(http)
 
-    io.of(Config.getForesight(foresightName, 'path')).on('connection', datafeeder => {
-        dataFeederManager.addDataFeeder(datafeeder)
-        console.info(`A datafeeder(${datafeeder.conn.remoteAddress}) client's connection has established...`)
+        io.of(Config.getForesight(foresightName, 'path')).on('connection', datafeeder => {
+            dataFeederManager.addDataFeeder(datafeeder)
+            console.info(`A datafeeder(${datafeeder.conn.remoteAddress}) client's connection has established...`)
 
-        datafeeder.on('feed', data => {
-            dataFeederManager.receive(data, datafeeder)
-        })
-
-        datafeeder.on('disconnect', () => {
-            dataFeederManager.delDataFeeder(datafeeder)
-            console.warn(`A datafeeder(${datafeeder.conn.remoteAddress}) client's connection has closed yet...`)
-        })
-    })
-
-    http.listen(Config.getForesight(foresightName, 'port'))
-    return { 
-        io: io,
-        hasFeederOnline: () => {
-            return dataFeederManager.onlineFeederNum() > 0
-        },
-        claim: async (demandData) => {
-            return new Promise(function(resolve, reject) {
-                dataFeederManager.setOutsideResolve(resolve)
-                dataFeederManager.claim(demandData)
-                setTimeout(reject, Config.getForesight(foresightName, 'timeout'), dataFeederManager.collectData())
+            datafeeder.on('feed', data => {
+                dataFeederManager.receive(data, datafeeder)
             })
-        },
-        state() {
-            return 'online feeders: ' + dataFeederManager.onlineFeederNum()
+
+            datafeeder.on('disconnect', () => {
+                dataFeederManager.delDataFeeder(datafeeder)
+                console.warn(`A datafeeder(${datafeeder.conn.remoteAddress}) client's connection has closed yet...`)
+            })
+        })
+
+        http.listen(Config.getForesight(foresightName, 'port'))
+        return { 
+            io: io,
+            hasFeederOnline: () => {
+                return dataFeederManager.onlineFeederNum() > 0
+            },
+            claim: async (demandData) => {
+                return new Promise(function(resolve, reject) {
+                    dataFeederManager.setOutsideResolve(resolve)
+                    dataFeederManager.claim(demandData)
+                    setTimeout(reject, Config.getForesight(foresightName, 'timeout'), dataFeederManager.collectData())
+                })
+            },
+            state() {
+                return 'online feeders: ' + dataFeederManager.onlineFeederNum()
+            }
         }
     }
-}
+} 

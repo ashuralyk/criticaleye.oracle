@@ -121,10 +121,12 @@ export function startServer() {
 }
 
 // 导出签名接口
-export async function sign(transaction) {
-    return new Promise(function(resolve, reject) {
-        walletManager.setOutsideResolve(resolve)
-        walletManager.sign(transaction)
-        setTimeout(reject, Config.getWallet('remote', 'timeout'), walletManager.makeSignatureArray())
-    })
+export default {
+    async sign(transaction) {
+        return new Promise(function(resolve, reject) {
+            walletManager.setOutsideResolve(resolve)
+            walletManager.sign(transaction)
+            setTimeout(reject, Config.getWallet('remote', 'timeout'), walletManager.makeSignatureArray())
+        })
+    }
 }

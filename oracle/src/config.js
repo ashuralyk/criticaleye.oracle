@@ -23,8 +23,10 @@ String.prototype.format = function() {
 const config = {
     oracle: {
         eosio: {
-            network: 'http://api-mainnet.starteos.io:80',
-            chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
+            // network: 'http://api-mainnet.starteos.io:80',
+            // chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
+            network: 'http://127.0.0.1:8888',
+            chainId: 'cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f',
         },
 
         foresight: {
@@ -82,7 +84,7 @@ const config = {
     wallet: {
         local: {
             privateKeys: [
-                '5KkAhuTwb4BuguSWPFaPtYBHpMKfBdFBEnGY92uLrdaPJ5dfgNd'
+                '5KifJt8fSc5UUT2zmkN1HnoVpbLrE1dPFU8eeyAW4hzg6GAoxB6'
             ]
         },
         remote: {
@@ -98,67 +100,69 @@ const config = {
     }
 }
 
-export function getEosio(option) {
-    let eosio = config.oracle.eosio[option]
-    if (! eosio) {
-        throw new Error(`[getEosio] received an unexpected "option" assigned with "${option}"`)
-    }
-    return eosio
-}
-
-export function getForesight(type, option) {
-    let foresight = config.oracle.foresight[type]
-    if (! foresight) {
-        throw new Error(`[getForesight] received an unexpected "type" assigned with "${type}", the expected types are "fifa" and "nba"`)
-    }
-    if (option) {
-        const value = foresight[option]
-        if (! value) {
-            throw new Error(`[getForesight] received an unexpected "option" assigned with "${option}"`)
+export default {
+    getEosio(option) {
+        let eosio = config.oracle.eosio[option]
+        if (! eosio) {
+            throw new Error(`[getEosio] received an unexpected "option" assigned with "${option}"`)
         }
-        return value
-    } else {
-        return foresight
-    }
-}
+        return eosio
+    },
 
-export function getMonitor(option) {
-    let monitor = config.printer.monitor[option]
-    if (! monitor) {
-        throw new Error(`[getMonitor] received an unexpected "option" assigned with "${option}"`)
-    }
-    return monitor
-}
-
-export function getHandler(type, format = null) {
-    let handler = config.oracle.handler[type]
-    if (handler == null) {
-        throw new Error(`[getHandler] received an unexpected "type" assigned with "${type}"`)
-    }
-    let printer = Printer.getPrinter(handler.printer)
-    return (...logs) => {
-        if (format) {
-            printer[handler.type](format.format(logs))
-        } else if (handler.format) {
-            printer[handler.type](handler.format.format(logs))
+    getForesight(type, option) {
+        let foresight = config.oracle.foresight[type]
+        if (! foresight) {
+            throw new Error(`[getForesight] received an unexpected "type" assigned with "${type}", the expected types are "fifa" and "nba"`)
+        }
+        if (option) {
+            const value = foresight[option]
+            if (! value) {
+                throw new Error(`[getForesight] received an unexpected "option" assigned with "${option}"`)
+            }
+            return value
         } else {
-            printer[handler.type](logs)
+            return foresight
         }
-    }
-}
+    },
 
-export function getWallet(type, option) {
-    let wallet = config.wallet[type]
-    if (! wallet) {
-        throw new Error(`[getWallet] received an unexpected "type" assigned with "${type}"`)
-    }
-    if (option) {
-        const value = wallet[option]
-        if (! value) {
-            throw new Error(`[getWallet] received an unexpected "option" assigned with "${option}"`)
+    getMonitor(option) {
+        let monitor = config.printer.monitor[option]
+        if (! monitor) {
+            throw new Error(`[getMonitor] received an unexpected "option" assigned with "${option}"`)
         }
-        return value
-    } else {
-        return wallet
+        return monitor
+    },
+
+    getHandler(type, format = null) {
+        let handler = config.oracle.handler[type]
+        if (handler == null) {
+            throw new Error(`[getHandler] received an unexpected "type" assigned with "${type}"`)
+        }
+        let printer = Printer.getPrinter(handler.printer)
+        return (...logs) => {
+            if (format) {
+                printer[handler.type](format.format(logs))
+            } else if (handler.format) {
+                printer[handler.type](handler.format.format(logs))
+            } else {
+                printer[handler.type](logs)
+            }
+        }
+    },
+
+    getWallet(type, option) {
+        let wallet = config.wallet[type]
+        if (! wallet) {
+            throw new Error(`[getWallet] received an unexpected "type" assigned with "${type}"`)
+        }
+        if (option) {
+            const value = wallet[option]
+            if (! value) {
+                throw new Error(`[getWallet] received an unexpected "option" assigned with "${option}"`)
+            }
+            return value
+        } else {
+            return wallet
+        }
     }
 }

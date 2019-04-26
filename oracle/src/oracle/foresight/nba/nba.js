@@ -1,8 +1,8 @@
 
 import Eosio from '../../eosio'
 import Wallet from '../../../wallet'
-import { getForesight } from '../../../config'
-import { makeForesightServer } from '../server'
+import Config from '../../../config'
+import Server from '../server'
 
 class PayerManager
 {
@@ -10,7 +10,7 @@ class PayerManager
         this.payment = {}
         this.foresight = foresight
         this.abiTypes = Eosio.generateAbiTypes(require('./nba.abi.json'))
-        this.contract = getForesight('nba', 'contract')
+        this.contract = Config.getForesight('nba', 'contract')
     }
 
     require( payer, receipt, requestType, packedRequestData ) {
@@ -108,29 +108,31 @@ class PayerManager
     }
 }
 
-export function start() {
-    console.log('开启NBA监控服务器...')
+export default {
+    start() {
+        console.log('开启NBA监控服务器...')
 
-    // 开启监听服务器
-    let foresight = makeForesightServer('nba')
-    let payerManager = new PayerManager( foresight )
+        // 开启监听服务器
+        let foresight = Server.makeForesightServer('nba')
+        let payerManager = new PayerManager( foresight )
 
-    // 开始循环监视合约状态
-    let contract = getForesight('nba', 'contract')
-    setInterval(async () => {
-        console.log('监控NBA合约...', foresight.state())
-        if (foresight.hasFeederOnline()) {
-            const ret = await Eosio.getTableRows(contract.code, contract.scope, contract.table)
-            if (ret) {
-                console.info( 'ret = ', ret );
-                for (row of ret.rows) {
-                    for (request of row.requests) {
-                        if (request.payed && !request.responsed) {
-                            payerManager.require(row.payer, request.receipt, request.request_type, request.request_data)
+        // 开始循环监视合约状态
+        let contract = Config.getForesight('nba', 'contract')
+        setInterval(async () => {
+            console.log('监控NBA合约...', foresight.state())
+            if (foresight.hasFeederOnline()) {
+                const ret = await Eosio.getTableRows(contract.code, contract.scope, contract.table)
+                if (ret) {
+                    console.info( 'ret = ', ret );
+                    for (row of ret.rows) {
+                        for (request of row.requests) {
+                            if (request.payed && !request.responsed) {
+                                payerManager.require(row.payer, request.receipt, request.request_type, request.request_data)
+                            }
                         }
                     }
                 }
             }
-        }
-    }, getForesight('nba', 'mspf'))
+        }, Config.getForesight('nba', 'mspf'))
+    }
 }

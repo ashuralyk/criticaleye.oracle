@@ -17,7 +17,7 @@ void test::require( string type )
 
     if ( type == "period" )
     {
-        auto receipt = criticaleye::require<nba_period_input>( get_self(), {
+        auto receipt = criticaleye::require<nba::period_input>( get_self(), {
             .lower_bound = 0,
             .upper_bound = 1000
         });
@@ -25,7 +25,7 @@ void test::require( string type )
     }
     else if ( type == "specified" )
     {
-        auto receipt = criticaleye::require<nba_specified_input>( get_self(), {
+        auto receipt = criticaleye::require<nba::specified_input>( get_self(), {
             .game_id = "mm-xx-00001"
         });
         print( "receipt(specified) = ", receipt );
@@ -36,18 +36,26 @@ void test::require( string type )
     }
 }
 
-void test::callback( nba_period_output &&output )
+void test::callback( nba::period_output &&output )
 {
-    print( "nba_period_output: " );
+    print( "nba::period_output: " );
     for ( auto &v : output.periodic_games )
     {
         print( " > ", v.game_id );
+        response_index.emplace( get_self(), [&](auto &v) {
+            v.time = current_time_point().time_since_epoch().count();
+            v.period_output = output;
+        });
     }
 }
 
-void test::callback( nba_specified_output &&output )
+void test::callback( nba::specified_output &&output )
 {
     print( "nba_specified_output: > ", output.specified_game.game_id );
+    response_index.emplace( get_self(), [&](auto &v) {
+        v.time = current_time_point().time_since_epoch().count();
+        v.specified_output = output;
+    });
 }
 
 EOSIO_DISPATCH( test, (pay)(receive)(require) )
