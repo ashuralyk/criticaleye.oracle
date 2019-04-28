@@ -38,24 +38,26 @@ void test::require( string type )
 
 void test::callback( nba::period_output &&output )
 {
+    response_index.emplace( get_self(), [&](auto &v) {
+        v.time = current_time_point().time_since_epoch().count();
+        v.period_output = output;
+    });
+
     print( "nba::period_output: " );
     for ( auto &v : output.periodic_games )
     {
         print( " > ", v.game_id );
-        response_index.emplace( get_self(), [&](auto &v) {
-            v.time = current_time_point().time_since_epoch().count();
-            v.period_output = output;
-        });
     }
 }
 
 void test::callback( nba::specified_output &&output )
 {
-    print( "nba_specified_output: > ", output.specified_game.game_id );
     response_index.emplace( get_self(), [&](auto &v) {
         v.time = current_time_point().time_since_epoch().count();
         v.specified_output = output;
     });
+
+    print( "nba_specified_output: > ", output.specified_game.game_id );
 }
 
 EOSIO_DISPATCH( test, (pay)(receive)(require) )
