@@ -13,33 +13,35 @@ class PayerManager
         this.contract = Config.getForesight('nba', 'contract')
     }
 
-    require( payer, receipt, requestType, packedRequestData ) {
+    require( payer, receipt, requestType, packedRequestHexData ) {
         // 解码二进制数据
-        const requestData = this._fromPackedRequest( requestType, packedRequestData );
+        const requestData = this._fromPackedRequest( requestType, packedRequestHexData )
         if (!requestData) {
             console.warn(`require 函数执行异常, 用户收据：${payer}(${receipt})`)
             return
         }
+        // console.info('requestData =', requestData)
         // 加入管理器
         if (this.payment[payer]) {
             if (!this.payment[payer][receipt]) {
                 this.payment[payer][receipt] = {
                     type: requestType,
-                    data: packedRequestData,
+                    data: packedRequestData
                 }
             } else {
                 // 跳过已经处理过的收据信息
+                // console.log('skipping...')
                 return;
             }
         } else {
             this.payment[payer] = {}
             this.payment[payer][receipt] = {
                 type: requestType,
-                data: packedRequestData,
+                data: packedRequestHexData
             }
         }
         // 发送爬虫请求
-        this._claim( payer, receipt, requestType, requestData )
+        this._claim( payer, receipt, requestType, requestData ).catch(Config.getHandler('trycatch'))
     }
 
     async _response( payer, receipt, packedResponseData ) {
@@ -48,11 +50,11 @@ class PayerManager
                 account: this.contract.code,
                 name: this.contract.action,
                 authorization: [{
-                    actor: payer,
-                    permission: 'active',
+                    actor: this.contract.actor,
+                    permission: 'active'
                 }],
                 data: {
-                    responser: this.contract.code,
+                    responser: this.contract.actor,
                     payer: payer,
                     receipt: receipt,
                     response_data: packedResponseData
@@ -71,9 +73,13 @@ class PayerManager
         console.warn(`_response 函数执行异常, 用户收据：${payer}(${receipt})`)
     }
 
-    _fromPackedRequest( type, packedData ) {
+    _fromPackedRequest( type, packedHexData ) {
         const abiType = this.contract.inputs[type]  
         if (abiType) {
+            let packedData = []
+            for (let i = 0; i < packedHexData.length; i += 2) {
+                packedData.push(parseInt(packedHexData[i] + packedHexData[i + 1], 16))
+            }
             return Eosio.deserializeByAbiType(this.abiTypes, abiType, packedData)
         } else {
             return null
@@ -94,8 +100,10 @@ class PayerManager
             type: requestType,
             data: requestData
         })
+        console.log('responseJsonDataCollection =', responseJsonDataCollection)
         if (responseJsonDataCollection && responseJsonDataCollection.length > 0) {
             const packedResponseData = this._toPackedResponse(requestType, responseJsonDataCollection[0])
+            // console.log('pack(JsonData) =', packedResponseData)
             if (packedResponseData) {
                 this._response( payer, receipt, packedResponseData )
                 return
@@ -123,9 +131,8 @@ export default {
             if (foresight.hasFeederOnline()) {
                 const ret = await Eosio.getTableRows(contract.code, contract.scope, contract.table)
                 if (ret) {
-                    console.info( 'ret = ', ret );
-                    for (row of ret.rows) {
-                        for (request of row.requests) {
+                    for (const row of ret.rows) {
+                        for (const request of row.requests) {
                             if (request.payed && !request.responsed) {
                                 payerManager.require(row.payer, request.receipt, request.request_type, request.request_data)
                             }

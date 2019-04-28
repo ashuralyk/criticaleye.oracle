@@ -19,6 +19,11 @@ export function state(log) {
     return true
 }
 
+export function trycatch(log) {
+    console.error(log)
+    return false
+}
+
 export function statistics(log) {
     console.log(log)
     return true

@@ -5,11 +5,11 @@ import Config from '../../config'
 import { TextEncoder, TextDecoder } from 'util'
 import * as Serialize from 'eosjs/dist/eosjs-serialize';
 
-const rpc = new JsonRpc(Config.getEosio('network'), { Fetch })
+const rpc = new JsonRpc(Config.getEosio('network'), { fetch: Fetch })
 const api = new Api({ rpc, signatureProvider: null, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() })
 
 export default {
-    async getTableRows(code, scope, table, params = { limit: 10, lower_bound: -1, upper_bound: -1, index_position: 0 }) {
+    async getTableRows(code, scope, table, params = { limit: 10, lower_bound: '', upper_bound: '', index_position: 1 }) {
         return await rpc.get_table_rows({
             json:           true,
             code:           code,
@@ -20,16 +20,15 @@ export default {
             upper_bound:    params.upper_bound,
             index_position: params.index_position
         })
-        .catch(Config.getHandler('error'))
+        .catch(Config.getHandler('trycatch'))
     },
 
-    async pushTransaction(signatures, jsonTransaction) {
-        const serializedTransaction = api.serializeTransaction(jsonTransaction)
+    async pushTransaction( tx ) {
         return await rpc.push_transaction({
-            signatures:            signatures,
-            serializedTransaction: serializedTransaction
+            signatures:            tx.signatures,
+            serializedTransaction: tx.serializedTransaction
         })
-        .catch(Config.getHandler('error'))
+        .catch(Config.getHandler('trycatch'))
     },
 
     generateAbiTypes( abi ) {

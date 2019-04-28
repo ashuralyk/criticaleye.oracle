@@ -11,7 +11,7 @@ class DataFeederManager {
     }
 
     addDataFeeder(feeder) {
-        if (this.datafeeders.indexOf(feeder) > -1) {
+        if (this.datafeeders.indexOf(feeder) < 0) {
             this.datafeeders.push(feeder)
             return true
         } else {
@@ -49,7 +49,7 @@ class DataFeederManager {
 
     receiveAll() {
         let find = true
-        for (feeder of this.datafeeders) {
+        for (const feeder of this.datafeeders) {
             if (this.receiveData.find(pair => pair.feeder === feeder) === undefined) {
                 find = false
                 break
@@ -74,8 +74,8 @@ export default {
         let io = SockIO(http)
 
         io.of(Config.getForesight(foresightName, 'path')).on('connection', datafeeder => {
-            dataFeederManager.addDataFeeder(datafeeder)
-            console.info(`A datafeeder(${datafeeder.conn.remoteAddress}) client's connection has established...`)
+            const ret = dataFeederManager.addDataFeeder(datafeeder)
+            console.info(`A datafeeder(${datafeeder.conn.remoteAddress}) client's connection has established... ${ret}`)
 
             datafeeder.on('feed', data => {
                 dataFeederManager.receive(data, datafeeder)

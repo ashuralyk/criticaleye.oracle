@@ -15,7 +15,7 @@ String.prototype.format = function() {
     .replace(/%{stack}/g, () => {
         var stack = {}
         Error.captureStackTrace(stack, String.prototype.format)
-        return stack.stack.split(/\n+/)[2].replace(/(^\s+|\s+$)/, '')
+        return stack.stack//.split(/\n+/)[2].replace(/(^\s+|\s+$)/, '')
     })
 }
 
@@ -51,6 +51,7 @@ const config = {
                     code:   'oracleosxnba',
                     scope:  'oracleosxnba',
                     table:  'oracle',
+                    actor:  'multibetgame',
                     action: 'response',
                     inputs: {
                         'nba.period.v1': 'nba_period_input',
@@ -66,10 +67,11 @@ const config = {
         },
 
         handler: {
-            error:      { printer: 'console', type: 'error',   format: '[FATAL(%{time} %{stack})] %{param}' },
-            warning:    { printer: 'console', type: 'warning', format: '[WARNING(%{time} %{stack})] %{param}' },
-            info:       { printer: 'console', type: 'info',    format: '[INFO(%{time} %{stack})] %{param}' },
-            state:      { printer: 'console', type: 'state',   format: '[STATE(%{time})] %{param}' },
+            error:      { printer: 'console', type: 'error',    format: '[FATAL(%{time} %{stack})] %{param}' },
+            warning:    { printer: 'console', type: 'warning',  format: '[WARNING(%{time} %{stack})] %{param}' },
+            info:       { printer: 'console', type: 'info',     format: '[INFO(%{time} %{stack})] %{param}' },
+            state:      { printer: 'console', type: 'state',    format: '[STATE(%{time})] %{param}' },
+            trycatch:   { printer: 'console', type: 'trycatch' },
             statistics: { printer: 'monitor', type: 'statistics' },
         },
     },
@@ -84,7 +86,7 @@ const config = {
     wallet: {
         local: {
             privateKeys: [
-                '5KifJt8fSc5UUT2zmkN1HnoVpbLrE1dPFU8eeyAW4hzg6GAoxB6'
+                '5KMd7f3ZA5K9PrdEA3Pve7Yty9TPhnH38kFQaS63dLMT1FH2CNn'
             ]
         },
         remote: {
