@@ -70,4 +70,10 @@ public:
     }
 };
 
+#define DEFAULT_PAY_RECEIVE_ACTION() \
+    [[eosio::action]] \
+    void pay( name server, checksum256 receipt, asset bill ) { criticaleye::pay(server, receipt, bill); } \
+    [[eosio::action]] \
+    void receive( name server, checksum256 receipt, string type, vector<char> data ) { criticaleye::receive(server, receipt, type, data); }
+
 #endif

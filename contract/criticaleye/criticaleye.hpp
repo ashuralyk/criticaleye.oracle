@@ -390,7 +390,7 @@ protected:
             method,
             params
         ));
-        tx.send( contract.value << 64 | static_cast<uint64_t>(now()), get_self() );
+        tx.send( contract.value << 64 | static_cast<uint64_t>(util::now()), get_self() );
 #endif
     }
 

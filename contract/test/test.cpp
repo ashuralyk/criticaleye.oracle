@@ -1,16 +1,6 @@
 
 #include "test.hpp"
 
-void test::pay( name server, checksum256 receipt, asset bill )
-{
-    criticaleye::pay( server, receipt, bill );
-}
-
-void test::receive( name server, checksum256 receipt, string type, vector<char> data )
-{
-    criticaleye::receive( server, receipt, type, data );
-}
-
 void test::require( string type )
 {
     require_auth( get_self() );
