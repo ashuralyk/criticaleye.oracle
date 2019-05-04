@@ -69,13 +69,13 @@ inline tuple<string, string, string, string> get_team_by_id( uint8_t team_id )
 
 struct data
 {
-    string   game_id;
-    int32_t  game_start_time;
-    uint8_t  home_team_id;
-    uint8_t  home_team_score;
-    uint8_t  away_team_id;
-    uint8_t  away_team_score;
-    uint8_t  status;
+    string  game_id;
+    int32_t game_start_time;
+    uint8_t home_team_id;
+    uint8_t home_team_score;
+    uint8_t away_team_id;
+    uint8_t away_team_score;
+    uint8_t status;
 };
 
 }

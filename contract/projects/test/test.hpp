@@ -1,5 +1,5 @@
 
-#include "../include/criticaleye.hpp"
+#include "../../include/criticaleye.hpp"
 
 class [[eosio::contract("usefortest")]] test
     : public criticaleye

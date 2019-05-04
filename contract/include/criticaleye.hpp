@@ -2,7 +2,7 @@
 #ifndef _INCLUDE_CRITICALEYE_
 #define _INCLUDE_CRITICALEYE_
 
-#include <map>
+#include <set>
 #include <functional>
 #include <variant>
 #include <eosio/eosio.hpp>
@@ -24,19 +24,19 @@ public:
     {}
 
     template <typename _Input>
-    checksum256 require( name payer, _Input &&input ) {
+    checksum256 require( _Input &&input ) {
         vector<char> packed_data = pack<util::protocol<_Input>>({
             .generate_time = util::now(),
             .command       = input
         });
         action(
-            permission_level{ payer, "active"_n },
+            permission_level{ get_self(), "active"_n },
             util::prototype<_Input>::contract_name,
             "require"_n,
-            make_tuple( payer, string(util::prototype<_Input>::type_code), packed_data )
+            make_tuple( get_self(), string(util::prototype<_Input>::type_code), packed_data )
         )
         .send();
-        return util::make_receipt<checksum256>( payer, packed_data );
+        return util::make_receipt<checksum256>( get_self(), packed_data );;
     }
 
     void pay( name server, checksum256 receipt, asset bill ) {
