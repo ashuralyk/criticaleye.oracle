@@ -256,7 +256,7 @@ public:
 
         auto i = _require_list.require_find( payer.value, ("玩家(" + payer.to_string() + ")的请求数据不存在").c_str() );
         _require_list.modify( i, get_self(), [&](auto &v) {
-            if ( auto f = find_if(v.requests.begin(), v.requests.end(), [&](auto &r){return r.receipt == receipt;});
+            if ( auto f = find_if(v.requests.begin(), v.requests.end(), [&](auto &r){return r.receipt == receipt && !r.responsed;});
                     f != v.requests.end() ) {
                 // check data and alter state
                 int64_t generate_time = util::check_data<_Outputs...>( (*f).request_type, response_data );
@@ -275,7 +275,7 @@ public:
                 // send inline action to tell payer there is a response from oracle
                 send_action( payer, "receive"_n, make_tuple(get_self(), receipt, (*f).request_type, response_data) );
             } else {
-                util::rollback( "玩家(" + payer.to_string() + ")下不存在指定的收据信息：" + util::checksum_to_string(receipt) );
+                util::rollback( "玩家(" + payer.to_string() + ")下不存在指定的可响应的收据信息：" + util::checksum_to_string(receipt) );
             }
         });
     }

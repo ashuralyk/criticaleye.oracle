@@ -3,11 +3,18 @@ import Http from 'http'
 import SockIO from 'socket.io'
 import Config from '../../config'
 
+String.prototype.hashCode = function() {
+    var hash = 0, i = 0, len = this.length;
+    while (i < len) {
+        hash  = ((hash << 5) - hash + this.charCodeAt(i++)) << 0;
+    }
+    return (hash + 2147483647) + 1
+}
+
 class DataFeederManager {
     constructor() {
         this.datafeeders = []
-        this.receiveData = []
-        this.resolove = null
+        this.receiveData = {}
     }
 
     addDataFeeder(feeder) {
@@ -21,45 +28,65 @@ class DataFeederManager {
 
     delDataFeeder(feeder) {
         let i = this.datafeeders.indexOf(feeder)
-        if ( i > -1) {
+        if (i > -1) {
             this.datafeeders.splice(i, 1)
         }
         return i
     }
 
-    claim(demandData) {
-        this.datafeeders.forEach(feeder => feeder.emit('claim', demandData))
+    claim(demandData, resolve) {
+        const hashCode = (JSON.stringify(demandData) + Date.now().toString()).hashCode()
+        if (! this.receiveData[hashCode]) {
+            this.receiveData[hashCode] = {
+                resolve: resolve,
+                receive: []
+            }
+            this.datafeeders.forEach(feeder => feeder.emit('claim', {
+                code:   hashCode,
+                demand: demandData
+            }))
+            return hashCode
+        } else {
+            reslove(null)
+        }
     }
 
-    collectData() {
-        return this.receiveData.map(pair => pair.data)
+    collectData(hashCode) {
+        if (this.receiveData[hashCode]) {
+            return this.receiveData[hashCode].receive.map(pair => pair.data)
+        } else {
+            return null
+        }
     }
 
-    receive(data, feeder) {
-        if (this.receiveData.find(pair => pair.feeder === feeder) === undefined) {
-            this.receiveData.push({
-                data: data,
-                feeder: feeder
-            })
-            if (this.receiveAll()) {
-                this.resolove && this.resolove(this.collectData())
+    receive(responseData, feeder) {
+        const hashCode = responseData.hashCode
+        if (this.receiveData[hashCode]) {
+            if (! this.receiveData[hashCode].receive.find(pair => pair.feeder === feeder)) {
+                this.receiveData[hashCode].receive.push({
+                    data:   responseData.data,
+                    feeder: feeder
+                })
+                if (this.receiveAll(hashCode)) {
+                    this.receiveData[hashCode].reslove(this.collectData(hashCode))
+                }
             }
         }
     }
 
-    receiveAll() {
-        let find = true
-        for (const feeder of this.datafeeders) {
-            if (this.receiveData.find(pair => pair.feeder === feeder) === undefined) {
-                find = false
-                break
+    receiveAll(hashCode) {
+        if (this.receiveData[hashCode]) {
+            let find = true
+            for (const feeder of this.datafeeders) {
+                if (this.receiveData[hashCode].receive.find(pair => pair.feeder === feeder) === undefined) {
+                    find = false
+                    break
+                }
             }
+            return find
+        } else {
+            return null
         }
-        return find
-    }
-
-    setOutsideResolve(resolove) {
-        this.resolove = resolove
     }
 
     onlineFeederNum() {
@@ -95,9 +122,8 @@ export default {
             },
             claim: async (demandData) => {
                 return new Promise(function(resolve, reject) {
-                    dataFeederManager.setOutsideResolve(resolve)
-                    dataFeederManager.claim(demandData)
-                    setTimeout(reject, Config.getForesight(foresightName, 'timeout'), dataFeederManager.collectData())
+                    const hashCode = dataFeederManager.claim(demandData, resolve)
+                    setTimeout(reject, Config.getForesight(foresightName, 'timeout'), dataFeederManager.collectData(hashCode))
                 })
             },
             state() {

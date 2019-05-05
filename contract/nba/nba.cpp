@@ -11,7 +11,7 @@ void apply( uint64_t receiver, uint64_t code, uint64_t action )
     {
         switch( action ) 
         {
-           EOSIO_DISPATCH_HELPER( NBA, (require)(response)(timeout)(limit)(auth)(privilege)(ban)(clear) )
+           EOSIO_DISPATCH_HELPER( NBA, (require)(response)(timeout)(limit)(auth)(privilege)(ban)(clear)(fortest) )
         }
     }
     else

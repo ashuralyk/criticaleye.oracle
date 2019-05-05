@@ -203,6 +203,11 @@ void NBASports::callback( nba::period_output &&output )
 {
     auto &gameSet = output.periodic_games;
 
+    for ( auto &game : gameSet )
+    {
+        print( " > ", game.game_id );
+    }
+
     // 修改已有比赛状态并删除被遗忘的比赛
     for ( auto i = _nbaData.begin(); i != _nbaData.end(); )
     {
@@ -212,12 +217,14 @@ void NBASports::callback( nba::period_output &&output )
                 v.awayTeamScore = (*j).away_team_score;
                 // 比赛刚好结束
                 if ( v.status < 2 && (*j).status == 2 ) {
+                    print( " close(", v.gameId ,")" );
                     close( v );
                 }
                 v.status = (*j).status;
             });
         } else {
             if ( (*i).status == 2 && (*i).homeTeamScore > 0 && (*i).awayTeamScore > 0 ) {
+                print( " erase(", v.gameId ,")" );
                 i = _nbaData.erase( i ); 
                 continue;
             }
@@ -236,7 +243,7 @@ void NBASports::callback( nba::period_output &&output )
     for_each( gameSet.begin(), gameSet.end(), [&](auto &game) {
         if ( all_of(_nbaData.begin(), _nbaData.end(), [&](auto &v){return v.gameId != game.game_id;}) ) {
             _nbaData.emplace( get_self(), [&](auto &v) {
-                v.globalId      = nextGlobalId;
+                v.globalId      = nextGlobalId++;
                 v.gameId        = game.game_id;
                 v.homeTeamScore = game.home_team_score;
                 v.awayTeamScore = game.away_team_score;
