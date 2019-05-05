@@ -1,5 +1,5 @@
 
-#include "../include/criticaleye.hpp"
+#include "../../include/criticaleye.hpp"
 
 class [[eosio::contract("usefortest")]] test
     : public criticaleye
@@ -23,11 +23,7 @@ public:
         , response_index( self, self.value )
     {}
 
-    [[eosio::action]]
-    void pay( name server, checksum256 receipt, asset bill );
-
-    [[eosio::action]]
-    void receive( name server, checksum256 receipt, string type, vector<char> data );
+    DEFAULT_PAY_RECEIVE_ACTION()
 
     [[eosio::action]]
     void require( string type );

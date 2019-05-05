@@ -4,9 +4,6 @@ const config = {
         ip:   '127.0.0.1',
         path: '/foresight/nba',
         port: 5002
-    },
-    plugins: {
-        use: ['webcrawler']
     }
 }
 
@@ -14,9 +11,6 @@ export default {
 
     getOracleServer() {
         return `http://${config.oracle.ip}:${config.oracle.port}${config.oracle.path}`
-    },
-
-    getPluginUse() {
-        return config.plugins.use
     }
+
 }

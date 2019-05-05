@@ -38,14 +38,6 @@ public:
     }
 
     [[eosio::action]]
-    void test( name responser, name payer, checksum256 receipt, nba::specified_output response_data ) {
-        response( responser, payer, receipt, pack<util::protocol<nba::specified_output>>({
-            .generate_time = current_time_point().time_since_epoch().count(),
-            .command       = response_data
-        }));
-    }
-
-    [[eosio::action]]
     void timeout( name payer, checksum256 receipt ) {
         parent::timeout( payer, receipt );
     }

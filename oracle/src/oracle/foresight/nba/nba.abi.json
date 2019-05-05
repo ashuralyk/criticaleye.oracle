@@ -35,11 +35,7 @@
                 },
                 {
                     "name": "game_start_time",
-                    "type": "uint32"
-                },
-                {
-                    "name": "game_end_time",
-                    "type": "uint32"
+                    "type": "int32"
                 },
                 {
                     "name": "home_team_id",
@@ -55,6 +51,10 @@
                 },
                 {
                     "name": "away_team_score",
+                    "type": "uint8"
+                },
+                {
+                    "name": "status",
                     "type": "uint8"
                 }
             ]
