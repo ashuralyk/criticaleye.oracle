@@ -42,10 +42,7 @@ public:
         parent::response<nba::period_output>( responser, payer, receipt, pack(util::protocol<nba::period_output> {
             .generate_time = util::now(),
             .command = {{
-                // { "1-2-1123333", 10, 1, 56, 2, 33, 2 },
-                { "6-4-1243333", 20, 6, 78, 6, 79, 2 },
-                { "7-1-1523333", 30, 7, 36, 1, 33, 2 },
-                { "11-8-2523334", 40, 11, 120, 8, 115, 0 }
+                { "11-8-2523334", 40, 11, 120, 8, 115, 2 }
             }}
         }));
     }

@@ -18,10 +18,12 @@ export default {
 
     async claimPeriodNba(lowerBound, upperBound)
     {
+        console.log('lowerBound =', lowerBound, 'upperBound =', upperBound)
         let dataSet = await Crawl(lowerBound, upperBound)
         if (dataSet) {
             return {
-                periodic_games: dataSet.map(v => {
+                periodic_games: dataSet.filter(v => v.awayTeamId).map(v => {
+                    console.log('v =', v)
                     return formatChange(v)
                 })
             }
@@ -32,7 +34,9 @@ export default {
 
     async claimSpecifiedNba(gameId)
     {
+        console.log('gameId =', gameId)
         let data = await Crawl(gameId)
+        console.log('data =', data)
         if (data) {
             return {
                 specified_game: formatChange(data)

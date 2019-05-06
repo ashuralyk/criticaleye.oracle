@@ -36,6 +36,7 @@ class DataFeederManager {
 
     claim(demandData, resolve) {
         const hashCode = (JSON.stringify(demandData) + Date.now().toString()).hashCode()
+        console.log('hashCode = ', hashCode)
         if (! this.receiveData[hashCode]) {
             this.receiveData[hashCode] = {
                 resolve: resolve,
@@ -60,7 +61,7 @@ class DataFeederManager {
     }
 
     receive(responseData, feeder) {
-        const hashCode = responseData.hashCode
+        const hashCode = responseData.code
         if (this.receiveData[hashCode]) {
             if (! this.receiveData[hashCode].receive.find(pair => pair.feeder === feeder)) {
                 this.receiveData[hashCode].receive.push({
@@ -68,7 +69,7 @@ class DataFeederManager {
                     feeder: feeder
                 })
                 if (this.receiveAll(hashCode)) {
-                    this.receiveData[hashCode].reslove(this.collectData(hashCode))
+                    this.receiveData[hashCode].resolve(this.collectData(hashCode))
                 }
             }
         }
