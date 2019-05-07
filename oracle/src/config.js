@@ -25,8 +25,10 @@ const config = {
         eosio: {
             // network: 'http://api-mainnet.starteos.io:80',
             // chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
-            network: 'http://127.0.0.1:8888',
-            chainId: 'cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f',
+            // network: 'http://127.0.0.1:8888',
+            // chainId: 'cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f',
+            network: 'http://88.99.193.44:8888',
+            chainId: 'e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473',
         },
 
         foresight: {
@@ -86,7 +88,8 @@ const config = {
     wallet: {
         local: {
             privateKeys: [
-                '5KMd7f3ZA5K9PrdEA3Pve7Yty9TPhnH38kFQaS63dLMT1FH2CNn'
+                // '5KMd7f3ZA5K9PrdEA3Pve7Yty9TPhnH38kFQaS63dLMT1FH2CNn'
+                '5JhucxgiiPAukRdbKpoDjd3v241xCZqGzEdBKwjkmLMu38AgnaX'
             ]
         },
         remote: {
