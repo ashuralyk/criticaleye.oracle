@@ -50,8 +50,10 @@ const config = {
                 timeout: 5000,
                 mspf: 1500,
                 contract: {
-                    code:   'oracleosxnba',
-                    scope:  'oracleosxnba',
+                    // code:   'oracleosxnba',
+                    // scope:  'oracleosxnba',
+                    code:   'sportsoracle',
+                    scope:  'sportsoracle',
                     table:  'oracle',
                     actor:  'multibetgame',
                     action: 'response',
