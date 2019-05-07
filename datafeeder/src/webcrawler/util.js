@@ -9,7 +9,7 @@
  * awayTeamScore
  * homeTeamScore
  * startTimeUnix
- * status: 0未开始,1直播中,2已结束
+ * status  比赛状态：0未开始、1比赛中、2已结束
  */
 const dayjs = require('dayjs');
 const { teamId, teamName} = require('./nba_teams');
@@ -43,7 +43,13 @@ function transportTencent(data) {
             startTimeUnix,
             awayTeamScore: m.leftGoal >> 0,
             homeTeamScore: m.rightGoal >> 0,
-            status: m.matchPeriod >> 0,
+            status: m.matchPeriod >> 0
         }
+    }).filter(m => {
+        if(m.awayTeamId == undefined || m.homeTeamId == undefined) {
+            console.warn('invalid match:', m);
+            return false;
+        }
+        return true;
     });
 }
