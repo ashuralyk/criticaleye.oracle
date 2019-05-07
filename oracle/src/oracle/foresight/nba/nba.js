@@ -26,7 +26,7 @@ class PayerManager
             if (!this.payment[payer][receipt]) {
                 this.payment[payer][receipt] = {
                     type: requestType,
-                    data: packedRequestData
+                    data: packedRequestHexData
                 }
             } else {
                 // 跳过已经处理过的收据信息
