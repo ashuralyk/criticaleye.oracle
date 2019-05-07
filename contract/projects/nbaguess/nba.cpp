@@ -224,7 +224,7 @@ void NBASports::callback( nba::period_output &&output )
             });
         } else {
             if ( (*i).status == 2 && (*i).homeTeamScore > 0 && (*i).awayTeamScore > 0 ) {
-                print( " erase(", v.gameId ,")" );
+                print( " erase(", (*i).gameId ,")" );
                 i = _nbaData.erase( i ); 
                 continue;
             }

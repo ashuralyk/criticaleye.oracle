@@ -63,4 +63,5 @@ typings/
 .vscode
 *.abi
 *.wasm
+*.save
 package-lock.json

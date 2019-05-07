@@ -6,7 +6,7 @@
 #include <string>
 #include <tuple>
 
-#define nba_contract "oracleosxnba"
+#define nba_contract "sportsoracle"
 
 using namespace std;
 
