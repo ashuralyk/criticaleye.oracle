@@ -44,7 +44,7 @@ class PayerManager
         this._claim( payer, receipt, requestType, requestData ).catch(Config.getHandler('trycatch'))
     }
 
-    async _response( payer, receipt, packedResponseData ) {
+    async _response( payer, receipt, packedResponseHexData ) {
         const transaction = {
             actions: [{
                 account: this.contract.code,
@@ -57,7 +57,7 @@ class PayerManager
                     responser: this.contract.actor,
                     payer: payer,
                     receipt: receipt,
-                    response_data: packedResponseData
+                    response_data: packedResponseHexData
                 }
             }]
         }
@@ -102,10 +102,10 @@ class PayerManager
         })
         console.log('responseJsonDataCollection =', responseJsonDataCollection)
         if (responseJsonDataCollection && responseJsonDataCollection.length > 0) {
-            const packedResponseData = this._toPackedResponse(requestType, responseJsonDataCollection[0])
+            const packedResponseHexData = this._toPackedResponse(requestType, responseJsonDataCollection[0])
             // console.log('pack(JsonData) =', packedResponseData)
-            if (packedResponseData) {
-                this._response( payer, receipt, packedResponseData )
+            if (packedResponseHexData) {
+                this._response( payer, receipt, packedResponseHexData )
                 return
             }
         }
