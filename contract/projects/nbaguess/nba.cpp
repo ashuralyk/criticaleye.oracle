@@ -178,7 +178,7 @@ void NBASports::join( string &&param, name player, asset value )
             util::rollback( "there is no creator " + params[1] + " under this 'mid'" );
         } else {
             size_t which = static_cast<size_t>( stoul(params[2]) );
-            if ( (*j).second.guessVector.size() < which ) {
+            if ( (*j).second.guessVector.size() <= which ) {
                 util::rollback( "the 'which' is beyond the creator's guesses" );
             }
             NBA::Guess &g = (*j).second.guessVector[which];
