@@ -27,8 +27,10 @@ const config = {
             // chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
             // network: 'http://127.0.0.1:8888',
             // chainId: 'cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f',
-            network: 'http://88.99.193.44:8888',
-            chainId: 'e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473',
+            // network: 'http://88.99.193.44:8888',
+            // chainId: 'e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473',
+            network: 'https://api-kylin.eosasia.one:443',
+            chainId: '5fff1dae8dc8e2fc4d5b23b2c7665c97f9e9d8edf2b6485a86ba311c25639191',
         },
 
         foresight: {
@@ -55,7 +57,7 @@ const config = {
                     code:   'sportsoracle',
                     scope:  'sportsoracle',
                     table:  'oracle',
-                    actor:  'multibetgame',
+                    actor:  'ashuralykeos',
                     action: 'response',
                     inputs: {
                         'nba.period.v1': 'nba_period_input',
@@ -91,7 +93,8 @@ const config = {
         local: {
             privateKeys: [
                 // '5KMd7f3ZA5K9PrdEA3Pve7Yty9TPhnH38kFQaS63dLMT1FH2CNn'
-                '5JhucxgiiPAukRdbKpoDjd3v241xCZqGzEdBKwjkmLMu38AgnaX'
+                // '5JhucxgiiPAukRdbKpoDjd3v241xCZqGzEdBKwjkmLMu38AgnaX'
+                '5KjjPQLm4UEcMfh4JAyPTVEsGctNZ3cMjACXyXGDqMZT2F2JLna'
             ]
         },
         remote: {
