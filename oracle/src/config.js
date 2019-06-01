@@ -90,8 +90,6 @@ const config = {
     wallet: {
         local: {
             privateKeys: [
-                // '5KMd7f3ZA5K9PrdEA3Pve7Yty9TPhnH38kFQaS63dLMT1FH2CNn'
-                '5JhucxgiiPAukRdbKpoDjd3v241xCZqGzEdBKwjkmLMu38AgnaX'
             ]
         },
         remote: {
